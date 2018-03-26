@@ -8,8 +8,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 import org.springframework.context.annotation.Bean
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RestController
 
 @SpringBootApplication
+@RestController
 class AwsServiceBrokerApplication(val userRepository: UserRepository, val passwordEncoder: PasswordEncoder){
 
     @Bean
@@ -23,7 +26,7 @@ class AwsServiceBrokerApplication(val userRepository: UserRepository, val passwo
 
     private fun adminUser(): User {
         return User("admin", passwordEncoder.encode("supersecret"),
-                SecurityAuthorities.ADMIN, SecurityAuthorities.FULL_ACCESS)
+                SecurityAuthorities.ADMIN, SecurityAuthorities.FULL_ACCESS, SecurityAuthorities.ADMIN)
     }
 
 }

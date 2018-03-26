@@ -16,18 +16,15 @@ import org.springframework.security.crypto.password.PasswordEncoder
 class SecurityConfiguration : WebSecurityConfigurerAdapter() {
     @Throws(Exception::class)
     override fun configure(http: HttpSecurity) {
-        // @formatter:off
-		http
-            .csrf().disable()
+            http
+                .csrf().disable()
                 .authorizeRequests()
-                .antMatchers("/bookstores/**").authenticated()
                 .antMatchers("/v2/**").hasAuthority(SecurityAuthorities.ADMIN)
                 .requestMatchers(EndpointRequest.to("info", "health")).permitAll()
                 .antMatchers("/h2-console/**/**").permitAll()
                 .requestMatchers(EndpointRequest.toAnyEndpoint()).hasAuthority(SecurityAuthorities.ADMIN)
-            .and()
-            .   httpBasic()
-         // @formatter:on
+                .and()
+                .httpBasic()
 
             http
                 .headers()
