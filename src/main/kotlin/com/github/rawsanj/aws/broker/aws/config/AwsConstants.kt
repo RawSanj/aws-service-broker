@@ -12,10 +12,10 @@ object AwsConstants{
     val MASTER_USERNAME_STRING = "masterUsername"
     val MASTER_PASSWORD_STRING = "masterUserPassword"
     val DB_ALLOCATED_STORAGE_STRING = "allocatedStorage"
-    val RDS_ENGINE = "engine"
+    val RDS_ENGINE_STRING = "engine"
+    val AWS_REGION_STRING = "awsRegion"
 
     val S3_BUCKET_PLAN = "s3-bucket"
     val S3_BUCKET_NAME_STRING = "bucketName"
-    val S3_BUCKET_REGION_STRING = "bucketRegion"
 
 }

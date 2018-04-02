@@ -38,7 +38,7 @@ class RDSServiceCatalogConfig {
                 .name("rds-db-service")
                 .description("An AWS Service to provision RDS Instance."+
                         "To customize RDS Instance provide the following parameters in request: " +
-                        "${AwsConstants.RDS_ENGINE}, ${AwsConstants.DB_ALLOCATED_STORAGE_STRING}, ${AwsConstants.MASTER_USERNAME_STRING}, ${AwsConstants.MASTER_PASSWORD_STRING}")
+                        "${AwsConstants.RDS_ENGINE_STRING}, ${AwsConstants.DB_ALLOCATED_STORAGE_STRING}, ${AwsConstants.MASTER_USERNAME_STRING}, ${AwsConstants.MASTER_PASSWORD_STRING}")
                 .bindable(true)
                 .tags("aws", "rds", "database")
                 .plans(smallPlan, mediumPlan, largePlan)

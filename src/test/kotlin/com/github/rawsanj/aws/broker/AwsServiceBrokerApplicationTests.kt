@@ -15,18 +15,18 @@ class AwsServiceBrokerApplicationTests {
 	fun contextLoads() {
 
 
-		var requestParams : MutableMap<String, Any> = mutableMapOf("user".to("sanjay"), "password".to("yolo"))
-
-		println(requestParams)
-
-		requestParams.put("user", "notme")
-		requestParams.put("password", "nahh")
-		requestParams.put("msg","hello")
-
-		println(requestParams)
-
-
-        println(UUID.randomUUID().toString())
+//		var requestParams : MutableMap<String, Any> = mutableMapOf("user".to("sanjay"), "password".to("yolo"))
+//
+//		println(requestParams)
+//
+//		requestParams.put("user", "notme")
+//		requestParams.put("password", "nahh")
+//		requestParams.put("msg","hello")
+//
+//		println(requestParams)
+//
+//
+//        println(UUID.randomUUID().toString())
 
         println(Random().nextInt(1000).absoluteValue)
 

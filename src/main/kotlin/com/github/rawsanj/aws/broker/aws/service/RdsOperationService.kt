@@ -1,39 +1,39 @@
 package com.github.rawsanj.aws.broker.aws.service
 
 import com.amazonaws.auth.AWSCredentialsProvider
-import com.amazonaws.handlers.AsyncHandler
+import com.amazonaws.regions.Regions
 import com.amazonaws.services.rds.AmazonRDSAsyncClientBuilder
 import com.amazonaws.services.rds.model.CreateDBInstanceRequest
-import com.amazonaws.services.rds.model.DBInstance
+import com.github.rawsanj.aws.broker.aws.config.AwsConstants
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.DB_ALLOCATED_STORAGE_STRING
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.MASTER_PASSWORD_STRING
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.MASTER_USERNAME_STRING
-import com.github.rawsanj.aws.broker.aws.config.AwsConstants.RDS_ENGINE
+import com.github.rawsanj.aws.broker.aws.config.AwsConstants.RDS_ENGINE_STRING
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest
+import org.springframework.core.env.Environment
 import org.springframework.stereotype.Service
-import java.lang.Exception
 import java.util.*
 import kotlin.math.absoluteValue
 
 
 @Service
-class RdsService(val awsCredentialsProvider: AWSCredentialsProvider) {
+class RdsOperationService(val awsCredentialsProvider: AWSCredentialsProvider, val env: Environment) {
 
-    val rdsAsyncClient = AmazonRDSAsyncClientBuilder.standard().withCredentials(awsCredentialsProvider).build();
+    fun createDbInstance(request: CreateServiceInstanceRequest): Triple<String, String, String> {
 
-    fun createDbInstance(request: CreateServiceInstanceRequest): Pair<String, String> {
-
-        val dbInstanceRequest = createDbInstanceRequest(request)
+        val (dbInstanceRequest, dbInstanceRegion) = createDbInstanceRequestWithRegion(request)
+        dbInstanceRequest.publiclyAccessible= true
 
         val masterUsername = dbInstanceRequest.masterUsername
         val masterUserPassword = dbInstanceRequest.masterUserPassword
 
+        val rdsAsyncClient = AmazonRDSAsyncClientBuilder.standard().withCredentials(awsCredentialsProvider).withRegion(dbInstanceRegion).build();
         rdsAsyncClient.createDBInstanceAsync(dbInstanceRequest, RdsAsyncHandler() )
 
-        return masterUsername to masterUserPassword
+        return Triple(masterUsername, masterUserPassword, dbInstanceRegion)
     }
 
-    fun createDbInstanceRequest(request: CreateServiceInstanceRequest): CreateDBInstanceRequest {
+    fun createDbInstanceRequestWithRegion(request: CreateServiceInstanceRequest): Pair<CreateDBInstanceRequest, String> {
 
         var parameters = request.parameters
 
@@ -43,8 +43,8 @@ class RdsService(val awsCredentialsProvider: AWSCredentialsProvider) {
             20
         }
 
-        var engine = if (parameters.containsKey(RDS_ENGINE)) {
-            parameters.getValue(RDS_ENGINE) as String
+        var engine = if (parameters.containsKey(RDS_ENGINE_STRING)) {
+            parameters.getValue(RDS_ENGINE_STRING) as String
         } else {
             "mysql"
         }
@@ -52,7 +52,7 @@ class RdsService(val awsCredentialsProvider: AWSCredentialsProvider) {
         var masterUsername = if (parameters.containsKey(MASTER_USERNAME_STRING)) {
             parameters.getValue(MASTER_USERNAME_STRING) as String
         } else {
-            "RdsAdmin" +  Random().nextInt().absoluteValue
+            "RdsAdmin" +  Random().nextInt(10000).absoluteValue
         }
 
         var masterUserPassword = if (parameters.containsKey(MASTER_PASSWORD_STRING)) {
@@ -61,7 +61,13 @@ class RdsService(val awsCredentialsProvider: AWSCredentialsProvider) {
             UUID.randomUUID().toString()
         }
 
-        return CreateDBInstanceRequest(request.serviceInstanceId, allocatedStorage, request.planId, engine, masterUsername, masterUserPassword)
+        var rdsInstanceRegion =  if (parameters.containsKey(AwsConstants.AWS_REGION_STRING)){
+            parameters.getValue(AwsConstants.AWS_REGION_STRING) as String
+        }else{
+            env.getProperty("AWS_DEFAULT_REGION") as String
+        }
+
+        return CreateDBInstanceRequest(request.serviceInstanceId, allocatedStorage, request.planId, engine, masterUsername, masterUserPassword) to rdsInstanceRegion
     }
 
 }
