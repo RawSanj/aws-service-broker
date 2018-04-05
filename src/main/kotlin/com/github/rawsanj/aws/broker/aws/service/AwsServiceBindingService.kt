@@ -1,12 +1,10 @@
 package com.github.rawsanj.aws.broker.aws.service
 
+import com.github.rawsanj.aws.broker.aws.config.AwsConstants
 import com.github.rawsanj.aws.broker.aws.model.ServiceBinding
 import com.github.rawsanj.aws.broker.aws.repository.ServiceBindingRepository
 import com.github.rawsanj.aws.broker.web.model.ApplicationInformation
 import com.github.rawsanj.aws.broker.web.model.User
-import com.github.rawsanj.aws.broker.web.security.SecurityAuthorities.FULL_ACCESS
-import com.github.rawsanj.aws.broker.web.security.SecurityAuthorities.RDS_ID_PREFIX
-import com.github.rawsanj.aws.broker.web.service.UserService
 import org.springframework.cloud.servicebroker.exception.ServiceInstanceBindingDoesNotExistException
 import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstanceAppBindingResponse
 import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstanceBindingRequest
@@ -16,27 +14,16 @@ import org.springframework.cloud.servicebroker.service.ServiceInstanceBindingSer
 import org.springframework.stereotype.Service
 import org.springframework.web.util.UriComponentsBuilder
 import java.util.*
+import kotlin.collections.HashMap
 
 @Service
-class AwsServiceBindingService(val serviceBindingRepository: ServiceBindingRepository, val userService: UserService) : ServiceInstanceBindingService{
+class AwsServiceBindingService(val serviceBindingRepository: ServiceBindingRepository,
+                               val rdsOperationService: RdsOperationService,
+                               val s3OperationService: S3OperationService) : ServiceInstanceBindingService {
 
     private val URI_KEY = "uri"
     private val USERNAME_KEY = "username"
     private val PASSWORD_KEY = "password"
-
-    override fun deleteServiceInstanceBinding(request: DeleteServiceInstanceBindingRequest) {
-
-        val bindingId = request.bindingId
-
-        if (serviceBindingRepository.existsById(bindingId)) {
-            serviceBindingRepository.deleteById(bindingId)
-            userService.deleteUser(bindingId)
-            // Delete RDS User Here
-        } else {
-            throw ServiceInstanceBindingDoesNotExistException(bindingId)
-        }
-
-    }
 
     override fun createServiceInstanceBinding(request: CreateServiceInstanceBindingRequest): CreateServiceInstanceBindingResponse {
 
@@ -44,7 +31,7 @@ class AwsServiceBindingService(val serviceBindingRepository: ServiceBindingRepos
 
         val binding = serviceBindingRepository.findById(request.bindingId)
 
-        if (binding.isPresent()) {
+        if (binding.isPresent) {
             responseBuilder
                     .bindingExisted(true)
                     .credentials(binding.get().credentials)
@@ -52,9 +39,26 @@ class AwsServiceBindingService(val serviceBindingRepository: ServiceBindingRepos
 
             // Create RDS User Here
 
+            var credentials = emptyMap<String, Any>()
+
+            when (request.serviceDefinitionId) {
+                AwsConstants.RDS_SERVICE_ID -> {
+                    // Create RDS User
+//                    credentials = rdsOperationService.createRdsUser(request)
+                }
+                AwsConstants.S3_SERVICE_ID -> {
+                    // Create S3
+                }
+                else -> {
+                    throw IllegalArgumentException("${request.serviceDefinitionId} is not offered! " +
+                            "Available Services are <${AwsConstants.RDS_SERVICE_ID}> and <${AwsConstants.S3_SERVICE_ID}>")
+                }
+            }
+
+
             val user = createUser(request)
 
-            val credentials = buildCredentials(request.serviceInstanceId, user)
+            // val credentials = buildCredentials(request.serviceInstanceId, user)
             saveBinding(request, credentials)
 
             responseBuilder
@@ -63,6 +67,20 @@ class AwsServiceBindingService(val serviceBindingRepository: ServiceBindingRepos
         }
 
         return responseBuilder.build()
+    }
+
+    override fun deleteServiceInstanceBinding(request: DeleteServiceInstanceBindingRequest) {
+
+        val bindingId = request.bindingId
+
+        if (serviceBindingRepository.existsById(bindingId)) {
+            serviceBindingRepository.deleteById(bindingId)
+//            userService.deleteUser(bindingId)
+            // Delete RDS User Here
+        } else {
+            throw ServiceInstanceBindingDoesNotExistException(bindingId)
+        }
+
     }
 
     private fun buildCredentials(instanceId: String, user: User): Map<String, String> {
@@ -85,8 +103,9 @@ class AwsServiceBindingService(val serviceBindingRepository: ServiceBindingRepos
     }
 
     private fun createUser(request: CreateServiceInstanceBindingRequest): User {
-        return userService.createUser(request.bindingId,
-                FULL_ACCESS, RDS_ID_PREFIX + request.serviceInstanceId)
+//        return userService.createUser(request.bindingId,
+//                FULL_ACCESS, RDS_ID_PREFIX + request.serviceInstanceId)
+        return User()
     }
 
     private fun saveBinding(request: CreateServiceInstanceBindingRequest, credentials: Map<String, Any>) {

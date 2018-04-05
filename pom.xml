@@ -24,6 +24,7 @@
         <java.version>1.8</java.version>
         <kotlin.version>1.2.31</kotlin.version>
         <spring-cloud.version>Finchley.M9</spring-cloud.version>
+        <commons-lang3.version>3.7</commons-lang3.version>
     </properties>
 
     <dependencies>
@@ -43,8 +44,9 @@
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-hateoas</artifactId>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons-lang3.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

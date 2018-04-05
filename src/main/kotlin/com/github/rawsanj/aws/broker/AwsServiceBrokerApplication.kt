@@ -7,11 +7,12 @@ import org.springframework.boot.ApplicationRunner
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 import org.springframework.context.annotation.Bean
+import org.springframework.scheduling.annotation.EnableAsync
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.web.bind.annotation.RestController
 
 @SpringBootApplication
-@RestController
+@EnableAsync(proxyTargetClass = true)
 class AwsServiceBrokerApplication(val userRepository: UserRepository, val passwordEncoder: PasswordEncoder) {
 
     @Bean

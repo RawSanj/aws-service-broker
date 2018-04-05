@@ -9,6 +9,7 @@ object AwsConstants{
     val RDS_DB_T2_MEDIUM_PLAN = "db.t2.medium"
     val RDS_DB_T2_LARGE_PLAN = "db.t2.large"
 
+    val RDS_DB_INSTANCE_ID_STRING = "dbInstanceIdentifier"
     val MASTER_USERNAME_STRING = "masterUsername"
     val MASTER_PASSWORD_STRING = "masterUserPassword"
     val DB_ALLOCATED_STORAGE_STRING = "allocatedStorage"

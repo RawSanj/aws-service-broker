@@ -1,8 +1,10 @@
 package com.github.rawsanj.aws.broker.aws.service
 
+import com.amazonaws.services.rds.model.CreateDBInstanceRequest
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.AWS_REGION_STRING
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.MASTER_PASSWORD_STRING
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.MASTER_USERNAME_STRING
+import com.github.rawsanj.aws.broker.aws.config.AwsConstants.RDS_DB_INSTANCE_ID_STRING
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.RDS_DB_T2_LARGE_PLAN
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.RDS_DB_T2_MEDIUM_PLAN
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.RDS_DB_T2_MICRO_PLAN
@@ -21,7 +23,7 @@ import org.springframework.cloud.servicebroker.service.ServiceInstanceService
 import org.springframework.stereotype.Service
 
 @Service
-class AwsServiceInstanceService(val serviceInstanceRepository: ServiceInstanceRepository, val rdsService: RdsOperationService, val s3Service: S3OperationService) : ServiceInstanceService {
+class AwsServiceInstanceService(val serviceInstanceRepository: ServiceInstanceRepository, val rdsOperationService: RdsOperationService, val s3OperationService: S3OperationService) : ServiceInstanceService {
 
     override fun createServiceInstance(request: CreateServiceInstanceRequest): CreateServiceInstanceResponse {
 
@@ -33,14 +35,15 @@ class AwsServiceInstanceService(val serviceInstanceRepository: ServiceInstanceRe
             responseBuilder.instanceExisted(true)
         } else {
 
-            var requestParams: MutableMap<String, Any> = request.parameters
+            var requestParams : MutableMap<String, Any> = request.parameters
 
             when (request.serviceDefinitionId) {
                 RDS_SERVICE_ID -> {
-                    val (masterUserName, masterPassword, dbInstanceRegion) = createRdsInstance(request)
+                    val (dbInfo, dbInstanceRegion) = createRdsInstance(request)
                     // Add master DB user/pass into request map to store in Service_Instance_Param if not provided by User
-                    requestParams.put(MASTER_USERNAME_STRING, masterUserName)
-                    requestParams.put(MASTER_PASSWORD_STRING, masterPassword)
+                    requestParams.put(RDS_DB_INSTANCE_ID_STRING, dbInfo.dbInstanceIdentifier)
+                    requestParams.put(MASTER_USERNAME_STRING, dbInfo.masterUsername)
+                    requestParams.put(MASTER_PASSWORD_STRING, dbInfo.masterUserPassword)
                     requestParams.put(AWS_REGION_STRING, dbInstanceRegion)
                 }
                 S3_SERVICE_ID -> {
@@ -67,7 +70,19 @@ class AwsServiceInstanceService(val serviceInstanceRepository: ServiceInstanceRe
 
         if (serviceInstanceRepository.existsById(instanceId)) {
 
-            //Decommision AWS RDS Instance
+            when (request.serviceDefinitionId) {
+                RDS_SERVICE_ID -> {
+                    val rdsStatus = deleteRdsInstance(instanceId)
+                }
+                S3_SERVICE_ID -> {
+                    val s3Status = deleteS3Bucket(instanceId)
+                }
+                else -> {
+                    throw IllegalArgumentException("${request.serviceDefinitionId} is not offered! " +
+                            "Available Services are <${RDS_SERVICE_ID}> and <${S3_SERVICE_ID}>")
+                }
+            }
+
             serviceInstanceRepository.deleteById(instanceId)
 
             return DeleteServiceInstanceResponse.builder().build()
@@ -82,29 +97,49 @@ class AwsServiceInstanceService(val serviceInstanceRepository: ServiceInstanceRe
         serviceInstanceRepository.save(serviceInstance)
     }
 
-    private fun createRdsInstance(request: CreateServiceInstanceRequest): Triple<String, String, String> {
+    private fun createRdsInstance(request: CreateServiceInstanceRequest): Pair<CreateDBInstanceRequest, String> {
 
-        val dbUserNamePasswordAndRegion = when (request.planId) {
+        val dbInfoAndRegion = when (request.planId) {
 
             RDS_DB_T2_MICRO_PLAN, RDS_DB_T2_MEDIUM_PLAN, RDS_DB_T2_LARGE_PLAN -> {
-                rdsService.createDbInstance(request)
+                rdsOperationService.createDbInstance(request)
             }
             else -> throw IllegalArgumentException("${request.planId} is not Offered under RDS Services! " +
                     "Available Plans are <${RDS_DB_T2_MICRO_PLAN}>, <${RDS_DB_T2_MEDIUM_PLAN}>, <${RDS_DB_T2_LARGE_PLAN}>")
         }
 
-        return dbUserNamePasswordAndRegion
+        return dbInfoAndRegion
+    }
+
+    private fun deleteRdsInstance(instanceId: String) {
+
+        val rdsInstance = serviceInstanceRepository.findById(instanceId).get()
+        val dBInstanceIdentifier = rdsInstance.parameters.get(RDS_DB_INSTANCE_ID_STRING).toString()
+        val awsRegion = rdsInstance.parameters.get(AWS_REGION_STRING).toString()
+
+        rdsOperationService.deleteDbInstance(dBInstanceIdentifier, awsRegion)
     }
 
     private fun createS3Bucket(request: CreateServiceInstanceRequest): Pair<String, String> {
 
         val awsS3BucketInfo = when (request.planId) {
             S3_BUCKET_PLAN -> {
-                s3Service.createBucket(request)
+                s3OperationService.createBucket(request)
             }
             else -> throw IllegalArgumentException("${request.planId} is not Offered under S3 Bucket Services! Available Plan is <${S3_BUCKET_PLAN}>")
         }
 
         return awsS3BucketInfo
     }
+
+    private fun deleteS3Bucket(instanceId: String) {
+
+        val s3Instance = serviceInstanceRepository.findById(instanceId).get()
+        val s3BucketName = s3Instance.parameters.get(S3_BUCKET_NAME_STRING).toString()
+        val awsRegion = s3Instance.parameters.get(AWS_REGION_STRING).toString()
+
+        s3OperationService.deleteBucket(s3BucketName, awsRegion)
+
+    }
+
 }
