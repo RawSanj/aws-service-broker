@@ -1,6 +1,5 @@
 package com.github.rawsanj.aws.broker.web.security
 
-import com.amazonaws.services.cognitoidp.model.UserNotFoundException
 import com.github.rawsanj.aws.broker.web.model.User
 import com.github.rawsanj.aws.broker.web.repository.UserRepository
 import org.springframework.security.core.GrantedAuthority
@@ -10,14 +9,13 @@ import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.stereotype.Service
 
-
 @Service
 class RepositoryUserDetailsService(private val userRepository: UserRepository) : UserDetailsService {
 
     override fun loadUserByUsername(username: String): UserDetails {
         val user = userRepository.findByUsername(username)
         if (!user.isPresent){
-            throw UserNotFoundException(username)
+            throw UsernameNotFoundException(username)
         }
 
         return CustomUserDetails(user.get())

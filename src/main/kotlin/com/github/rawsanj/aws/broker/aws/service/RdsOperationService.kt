@@ -4,15 +4,16 @@ import com.amazonaws.auth.AWSCredentialsProvider
 import com.amazonaws.services.rds.AmazonRDSAsyncClientBuilder
 import com.amazonaws.services.rds.model.CreateDBInstanceRequest
 import com.amazonaws.services.rds.model.DeleteDBInstanceRequest
+import com.amazonaws.services.rds.model.DescribeDBInstancesRequest
+import com.amazonaws.services.rds.model.Tag
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants
-import com.github.rawsanj.aws.broker.aws.config.AwsConstants.AWS_REGION_STRING
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.DB_ALLOCATED_STORAGE_STRING
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.MASTER_PASSWORD_STRING
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.MASTER_USERNAME_STRING
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.RDS_ENGINE_STRING
 import com.github.rawsanj.aws.broker.aws.repository.ServiceInstanceRepository
 import org.apache.commons.lang3.RandomStringUtils
-import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstanceBindingRequest
+import org.slf4j.LoggerFactory
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest
 import org.springframework.core.env.Environment
 import org.springframework.scheduling.annotation.Async
@@ -24,15 +25,60 @@ import kotlin.math.absoluteValue
 @Service
 class RdsOperationService(private val awsCredentialsProvider: AWSCredentialsProvider, private val env: Environment, private val serviceInstanceRepository: ServiceInstanceRepository) {
 
+    private val LOG = LoggerFactory.getLogger(RdsOperationService::class.java)
+
     fun createDbInstance(request: CreateServiceInstanceRequest): Pair<CreateDBInstanceRequest, String> {
 
         val (dbInstanceRequest, dbInstanceRegion) = createDbInstanceRequestWithRegion(request)
         dbInstanceRequest.publiclyAccessible= true
 
+        val instanceIdTag : Tag = Tag().withKey("InstanceId").withValue(request.serviceInstanceId)
+        val regionTag : Tag = Tag().withKey("Region").withValue(dbInstanceRegion)
+        dbInstanceRequest.setTags(listOf(instanceIdTag, regionTag))
+
         val rdsAsyncClient = AmazonRDSAsyncClientBuilder.standard().withCredentials(awsCredentialsProvider).withRegion(dbInstanceRegion).build();
         rdsAsyncClient.createDBInstanceAsync(dbInstanceRequest, RdsCreateDbInstanceAsyncHandler() )
 
+        LOG.info("DBInstance Request Submitted for ${dbInstanceRequest.dbInstanceIdentifier} in Region: $dbInstanceRegion")
+
         return dbInstanceRequest to dbInstanceRegion
+    }
+
+    fun dummyCall(msg: String){
+        LOG.info("I am a DUMMY CALL. Message: $msg")
+    }
+
+    fun getDbInstanceHostname(dBInstanceIdentifier: String, dbInstanceRegion: String) : String {
+
+        LOG.info("Fetching RDS Endpoint: dBInstanceIdentifier: $dBInstanceIdentifier. dbInstanceRegion: $dbInstanceRegion")
+
+        var endpoint : String? = null
+        var noOfTries = 1
+
+        val rdsAsyncClient = AmazonRDSAsyncClientBuilder.standard().withCredentials(awsCredentialsProvider).withRegion(dbInstanceRegion).build();
+        val describeDbRequest = DescribeDBInstancesRequest().withDBInstanceIdentifier(dBInstanceIdentifier)
+
+        while (endpoint == null){
+
+            LOG.info("RDS Endpoint is null, Fetching RDS DBInstance Info for $noOfTries time.")
+
+            val dBInstances = rdsAsyncClient.describeDBInstances(describeDbRequest)
+
+            if (dBInstances.dbInstances.size > 0){
+
+                val dbInstance = dBInstances.dbInstances[0]
+
+                LOG.info("RDS ENDPOINT: ${dbInstance.endpoint}. Address: ${dbInstance.endpoint.address}. Port: ${dbInstance.endpoint.port}. HostedZoneId: ${dbInstance.endpoint.hostedZoneId}")
+
+                endpoint = dbInstance.endpoint.address
+
+            }
+
+            Thread.sleep(10_000)
+            noOfTries++
+        }
+
+        return endpoint
     }
 
     private fun createDbInstanceRequestWithRegion(request: CreateServiceInstanceRequest): Pair<CreateDBInstanceRequest, String> {

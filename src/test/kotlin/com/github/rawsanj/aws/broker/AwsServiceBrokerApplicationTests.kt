@@ -1,5 +1,6 @@
 package com.github.rawsanj.aws.broker
 
+import com.amazonaws.services.rds.model.Tag
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.boot.test.context.SpringBootTest
@@ -33,6 +34,17 @@ class AwsServiceBrokerApplicationTests {
         val no = -100
         println(no.absoluteValue)
 
-	}
+        var tags = listOf<Tag>(Tag().withKey("InstanceId").withValue("ufgjygfjgjfgsejfjsgfe"), Tag().withKey("Region").withValue("us-west-2"))
+
+        val instanceTag = tags.first { it.key == "InstanceId" }
+
+        println("InstanceTag: $instanceTag")
+
+        val regionTag = tags.first { it.key == "Region" }
+
+        println("RegionTag: $regionTag")
+
+
+    }
 
 }
