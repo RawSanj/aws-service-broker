@@ -37,48 +37,52 @@ class RdsOperationService(private val awsCredentialsProvider: AWSCredentialsProv
         dbInstanceRequest.setTags(listOf(instanceIdTag, regionTag))
 
         val rdsAsyncClient = AmazonRDSAsyncClientBuilder.standard().withCredentials(awsCredentialsProvider).withRegion(dbInstanceRegion).build();
-        rdsAsyncClient.createDBInstanceAsync(dbInstanceRequest, RdsCreateDbInstanceAsyncHandler() )
+        rdsAsyncClient.createDBInstanceAsync(dbInstanceRequest, RdsCreateDbInstanceAsyncHandler(serviceInstanceRepository, this) )
 
         LOG.info("DBInstance Request Submitted for ${dbInstanceRequest.dbInstanceIdentifier} in Region: $dbInstanceRegion")
 
         return dbInstanceRequest to dbInstanceRegion
     }
 
-    fun dummyCall(msg: String){
-        LOG.info("I am a DUMMY CALL. Message: $msg")
-    }
-
-    fun getDbInstanceHostname(dBInstanceIdentifier: String, dbInstanceRegion: String) : String {
+    fun getDbInstanceHostnameAndPort(dBInstanceIdentifier: String, dbInstanceRegion: String) : Pair<String, Int> {
 
         LOG.info("Fetching RDS Endpoint: dBInstanceIdentifier: $dBInstanceIdentifier. dbInstanceRegion: $dbInstanceRegion")
 
         var endpoint : String? = null
+        var port = 0;
         var noOfTries = 1
+        var retrySeconds : Long = 60_000 * 3
 
         val rdsAsyncClient = AmazonRDSAsyncClientBuilder.standard().withCredentials(awsCredentialsProvider).withRegion(dbInstanceRegion).build();
         val describeDbRequest = DescribeDBInstancesRequest().withDBInstanceIdentifier(dBInstanceIdentifier)
 
         while (endpoint == null){
 
-            LOG.info("RDS Endpoint is null, Fetching RDS DBInstance Info for $noOfTries time.")
+            LOG.info("Fetching RDS DBInstance Info for $noOfTries time now.")
 
             val dBInstances = rdsAsyncClient.describeDBInstances(describeDbRequest)
 
             if (dBInstances.dbInstances.size > 0){
 
                 val dbInstance = dBInstances.dbInstances[0]
+                if (dbInstance.endpoint !=null){
 
-                LOG.info("RDS ENDPOINT: ${dbInstance.endpoint}. Address: ${dbInstance.endpoint.address}. Port: ${dbInstance.endpoint.port}. HostedZoneId: ${dbInstance.endpoint.hostedZoneId}")
+                    LOG.info("RDS ENDPOINT: ${dbInstance.endpoint}. Address: ${dbInstance.endpoint.address}. Port: ${dbInstance.endpoint.port}. HostedZoneId: ${dbInstance.endpoint.hostedZoneId}")
+                    endpoint = dbInstance.endpoint.address
+                    port = dbInstance.endpoint.port
+                }else{
 
-                endpoint = dbInstance.endpoint.address
+                    LOG.info("RDS Instance is not yet Ready yet. Retrying again  in $retrySeconds Seconds!")
 
+                    Thread.sleep(retrySeconds)
+
+                    noOfTries++
+                    retrySeconds = retrySeconds/2
+                }
             }
-
-            Thread.sleep(10_000)
-            noOfTries++
         }
 
-        return endpoint
+        return endpoint to port
     }
 
     private fun createDbInstanceRequestWithRegion(request: CreateServiceInstanceRequest): Pair<CreateDBInstanceRequest, String> {

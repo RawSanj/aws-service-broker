@@ -12,42 +12,33 @@ import org.springframework.stereotype.Component
 import java.lang.Exception
 
 @Component
-class RdsCreateDbInstanceAsyncHandler: AsyncHandler<CreateDBInstanceRequest, DBInstance> {
-
-    @Autowired
-    private lateinit var serviceInstanceRepository: ServiceInstanceRepository
-
-    @Autowired
-    private lateinit var rdsOperationService: RdsOperationService
+class RdsCreateDbInstanceAsyncHandler(private val serviceInstanceRepository: ServiceInstanceRepository, private var rdsOperationService: RdsOperationService) : AsyncHandler<CreateDBInstanceRequest, DBInstance> {
 
     private val LOG = LoggerFactory.getLogger(RdsCreateDbInstanceAsyncHandler::class.java)
 
     override fun onSuccess(request: CreateDBInstanceRequest, result: DBInstance) {
+
         LOG.info("RDS Instance for Request { ${request.dbInstanceIdentifier}, ${request.engine}, ${request.masterUsername} } is processed Successfully")
-        LOG.info("Result is : ARN - ${result.dbInstanceArn}. Endpoint: ${result.endpoint} ")
+        LOG.info("Result is : ARN - ${result.dbInstanceArn}.")
 
         val instanceTag = request.tags.first { it.key == "InstanceId" }
         val regionTag = request.tags.first { it.key == "Region" }
 
-        LOG.info("RDSOPS: $rdsOperationService. Is Null: ${rdsOperationService == null}")
-
-        LOG.info("TAGs: $instanceTag $regionTag")
-
-        rdsOperationService.dummyCall("This is Async Call.")
-
-        val dbInstanceHostname = rdsOperationService.getDbInstanceHostname(request.dbInstanceIdentifier, regionTag.value)
+        val (dbInstanceHostname, dbPort) = rdsOperationService.getDbInstanceHostnameAndPort(request.dbInstanceIdentifier, regionTag.value)
 
         LOG.info("dbInstanceHostname: $dbInstanceHostname")
 
         serviceInstanceRepository.findById(instanceTag.value).ifPresent {
 
-            val parameters : MutableMap<String, Any> = it.parameters as MutableMap
+            LOG.info("ServiceInstance Id: ${it.instanceId} is present, updating Hostname and port")
+
+            val parameters: MutableMap<String, Any> = it.parameters as MutableMap
             parameters["hostname"] = dbInstanceHostname
+            parameters["port"] = dbPort
+            parameters["aws-arn"] = result.dbInstanceArn
 
             val serviceInstance = ServiceInstance(it.instanceId, it.serviceDefinitionId, it.planId, parameters)
-
-           serviceInstanceRepository.save(serviceInstance)
-
+            serviceInstanceRepository.save(serviceInstance)
         }
     }
 

@@ -16,7 +16,7 @@ data class ServiceInstance(
     @Column(length = 50)
     val planId: String = "",
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyColumn(name = "parameter_name", length = 100)
     @Column(name = "parameter_value")
     @CollectionTable(name = "service_instance_parameters", joinColumns = arrayOf(JoinColumn(name = "instance_id")))
