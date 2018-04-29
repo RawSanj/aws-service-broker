@@ -17,7 +17,7 @@ data class ServiceBinding(
     @Convert(converter = ObjectToStringConverter::class, attributeName = "value")
     val parameters: Map<String, Any> = mutableMapOf(),
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyColumn(name = "credential_name", length = 100)
     @Column(name = "credential_value")
     @CollectionTable(name = "service_binding_credentials", joinColumns = arrayOf(JoinColumn(name = "binding_id")))

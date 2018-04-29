@@ -9,7 +9,6 @@ import org.springframework.boot.runApplication
 import org.springframework.context.annotation.Bean
 import org.springframework.scheduling.annotation.EnableAsync
 import org.springframework.security.crypto.password.PasswordEncoder
-import org.springframework.web.bind.annotation.RestController
 
 @SpringBootApplication
 @EnableAsync(proxyTargetClass = true)
@@ -18,6 +17,7 @@ class AwsServiceBrokerApplication(val userRepository: UserRepository, val passwo
     @Bean
     fun init(): ApplicationRunner {
         return ApplicationRunner {
+            // Create Application Admin User
             if (userRepository.count() === 0L) {
                 userRepository.save(adminUser())
             }

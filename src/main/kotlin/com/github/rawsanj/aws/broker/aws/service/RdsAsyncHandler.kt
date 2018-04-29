@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component
 import java.lang.Exception
 
 @Component
-class RdsCreateDbInstanceAsyncHandler(private val serviceInstanceRepository: ServiceInstanceRepository, private var rdsOperationService: RdsOperationService) : AsyncHandler<CreateDBInstanceRequest, DBInstance> {
+class RdsCreateDbInstanceAsyncHandler(private var rdsOperationService: RdsOperationService) : AsyncHandler<CreateDBInstanceRequest, DBInstance> {
 
     private val LOG = LoggerFactory.getLogger(RdsCreateDbInstanceAsyncHandler::class.java)
 
@@ -28,18 +28,8 @@ class RdsCreateDbInstanceAsyncHandler(private val serviceInstanceRepository: Ser
 
         LOG.info("dbInstanceHostname: $dbInstanceHostname")
 
-        serviceInstanceRepository.findById(instanceTag.value).ifPresent {
+        rdsOperationService.updateRdsServiceInstance(instanceTag, dbInstanceHostname, dbPort, result.dbInstanceArn)
 
-            LOG.info("ServiceInstance Id: ${it.instanceId} is present, updating Hostname and port")
-
-            val parameters: MutableMap<String, Any> = it.parameters as MutableMap
-            parameters["hostname"] = dbInstanceHostname
-            parameters["port"] = dbPort
-            parameters["aws-arn"] = result.dbInstanceArn
-
-            val serviceInstance = ServiceInstance(it.instanceId, it.serviceDefinitionId, it.planId, parameters)
-            serviceInstanceRepository.save(serviceInstance)
-        }
     }
 
     override fun onError(exception: Exception) {

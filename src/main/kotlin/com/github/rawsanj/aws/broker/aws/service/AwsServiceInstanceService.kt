@@ -72,10 +72,11 @@ class AwsServiceInstanceService(val serviceInstanceRepository: ServiceInstanceRe
 
             when (request.serviceDefinitionId) {
                 RDS_SERVICE_ID -> {
-                    val rdsStatus = deleteRdsInstance(instanceId)
+                    deleteRdsInstance(instanceId)
+
                 }
                 S3_SERVICE_ID -> {
-                    val s3Status = deleteS3Bucket(instanceId)
+                    deleteS3Bucket(instanceId)
                 }
                 else -> {
                     throw IllegalArgumentException("${request.serviceDefinitionId} is not offered! " +

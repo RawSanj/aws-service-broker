@@ -22,5 +22,7 @@ spring:
 
 AWS_DEFAULT_REGION: us-east-1
 
+AWS_S3_ADMIN_USER: s3-admin
+
 
 # Open the Database Ports in default Security Group

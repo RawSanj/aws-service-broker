@@ -1,26 +1,40 @@
 package com.github.rawsanj.aws.broker.aws.service
 
 import com.amazonaws.auth.AWSCredentialsProvider
+import com.amazonaws.services.identitymanagement.AmazonIdentityManagement
+import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClientBuilder
+import com.amazonaws.services.identitymanagement.model.AttachUserPolicyRequest
+import com.amazonaws.services.identitymanagement.model.CreatePolicyRequest
+import com.amazonaws.services.identitymanagement.model.CreateUserRequest
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.amazonaws.services.s3.model.CreateBucketRequest
+import com.amazonaws.util.EC2MetadataUtils
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.AWS_REGION_STRING
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.S3_BUCKET_NAME_STRING
+import com.github.rawsanj.aws.broker.aws.repository.ServiceInstanceRepository
 import org.slf4j.LoggerFactory
+import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstanceBindingRequest
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest
 import org.springframework.core.env.Environment
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import java.util.*
+import com.amazonaws.services.identitymanagement.model.CreateAccessKeyResult
+import com.amazonaws.services.identitymanagement.model.CreateAccessKeyRequest
+import com.github.rawsanj.aws.broker.aws.config.AwsConstants.AWS_ACCESS_KEY_STRING
+import com.github.rawsanj.aws.broker.aws.config.AwsConstants.AWS_ARN_STRING
+import com.github.rawsanj.aws.broker.aws.config.AwsConstants.AWS_IAM_USER_STRING
+import com.github.rawsanj.aws.broker.aws.config.AwsConstants.AWS_SECRET_KEY_STRING
 
 
 @Service
-class S3OperationService(private val awsCredentialsProvider: AWSCredentialsProvider,private val env: Environment) {
+class S3OperationService(private val awsCredentialsProvider: AWSCredentialsProvider,private val env: Environment, private val serviceInstanceRepository: ServiceInstanceRepository) {
 
     private val LOG = LoggerFactory.getLogger(S3OperationService::class.java)
 
     fun createBucket(request: CreateServiceInstanceRequest): Pair<String, String> {
 
-        var (bucketName, bucketRegion) = generateBucketAndRegionNameIfNotPresent(request.parameters)
+        val (bucketName, bucketRegion) = generateBucketAndRegionNameIfNotPresent(request.parameters)
 
         val s3BucketRequest = CreateBucketRequest(bucketName, bucketRegion)
 
@@ -32,13 +46,13 @@ class S3OperationService(private val awsCredentialsProvider: AWSCredentialsProvi
 
     private fun generateBucketAndRegionNameIfNotPresent(parameters: Map<String, Any>): Pair<String, String> {
 
-        var bucketName =  if (parameters.containsKey(S3_BUCKET_NAME_STRING)){
+        val bucketName =  if (parameters.containsKey(S3_BUCKET_NAME_STRING)){
             parameters.getValue(S3_BUCKET_NAME_STRING) as String
         }else{
             UUID.randomUUID().toString()
         }
 
-        var bucketRegion =  if (parameters.containsKey(AWS_REGION_STRING)){
+        val bucketRegion =  if (parameters.containsKey(AWS_REGION_STRING)){
             parameters.getValue(AWS_REGION_STRING) as String
         }else{
             env.getProperty("AWS_DEFAULT_REGION") as String
@@ -46,7 +60,6 @@ class S3OperationService(private val awsCredentialsProvider: AWSCredentialsProvi
 
         return bucketName to bucketRegion
     }
-
 
     @Async
     fun deleteBucket(bucketName: String, awsRegion: String) {
@@ -59,6 +72,116 @@ class S3OperationService(private val awsCredentialsProvider: AWSCredentialsProvi
 
         LOG.info("Deleting Bucket: $bucketName")
         s3Client.deleteBucket(bucketName)
+    }
+
+    fun createBucketSecretKeys(request: CreateServiceInstanceBindingRequest): Map<String, Any> {
+        val credentials = HashMap<String, Any>()
+
+        val serviceInstance = serviceInstanceRepository.findById(request.serviceInstanceId)
+
+        if (serviceInstance.isPresent) {
+
+            val parameters = serviceInstance.get().parameters
+            val bucketName = parameters[S3_BUCKET_NAME_STRING]
+            val awsRegion = parameters[AWS_REGION_STRING]
+
+            credentials[S3_BUCKET_NAME_STRING] = bucketName.toString()
+            credentials[AWS_REGION_STRING] = awsRegion.toString()
+
+            //Create AmazonIdentityManagement Client
+            val iamManager = AmazonIdentityManagementClientBuilder.standard().withCredentials(awsCredentialsProvider).withRegion(awsRegion.toString()).build()
+            // Create new IAM User for Bucket
+            val iamS3BucketUser = createS3BucketUser(bucketName.toString(), iamManager)
+            // Create new IAM Policy for S3 Bucket Access
+            val s3PolicyARN = createS3FullAccessToSingleBucketPolicy(bucketName.toString(), iamManager)
+            // Attach Policy to IAM User
+            attachS3PolicyToUser(iamS3BucketUser, s3PolicyARN, iamManager)
+
+            // Set S3 Bucket Credentials
+            val s3AccessKeys = createS3AccessKeys(iamS3BucketUser, iamManager)
+            credentials[AWS_ACCESS_KEY_STRING] = s3AccessKeys.accessKey.accessKeyId
+            credentials[AWS_SECRET_KEY_STRING] = s3AccessKeys.accessKey.secretAccessKey
+            credentials[AWS_ARN_STRING] = s3PolicyARN
+            credentials[AWS_IAM_USER_STRING] = iamS3BucketUser
+
+        } else {
+            throw IllegalArgumentException("${request.serviceInstanceId} is not offered! ")
+        }
+
+        return credentials
+    }
+
+    private fun createS3BucketUser(bucketName: String, iamManager: AmazonIdentityManagement): String {
+
+        val iamS3BucketUser = "S3-USER-${bucketName}"
+
+        val request = CreateUserRequest()
+                .withUserName(iamS3BucketUser)
+
+        val response = iamManager.createUser(request)
+
+        LOG.info("IAM User for S3 Bucket $bucketName - $iamS3BucketUser created successfully. SDK Response: $response")
+
+        return iamS3BucketUser
+
+    }
+
+    private fun createS3FullAccessToSingleBucketPolicy(bucketName: String, iamManager: AmazonIdentityManagement): String {
+
+        val POLICY_DOCUMENT =
+                "{\n" +
+                "   \"Version\": \"2012-10-17\",\n" +
+                "   \"Statement\": [\n" +
+                "     {\n" +
+                "       \"Effect\": \"Allow\",\n" +
+                "       \"Action\": [\"s3:ListBucket\"],\n" +
+                "       \"Resource\": [\"arn:aws:s3:::$bucketName\"]\n" +
+                "     },\n" +
+                "     {\n" +
+                "       \"Effect\": \"Allow\",\n" +
+                "       \"Action\": [\n" +
+                "         \"s3:PutObject\",\n" +
+                "         \"s3:GetObject\",\n" +
+                "         \"s3:DeleteObject\"\n" +
+                "       ],\n" +
+                "       \"Resource\": [\"arn:aws:s3:::$bucketName/*\"]\n" +
+                "     }\n" +
+                "   ]\n" +
+                " }"
+
+        val s3PolicyName = "S3-POLICY-${bucketName}"
+
+        val request = CreatePolicyRequest()
+                .withPolicyName(s3PolicyName)
+                .withPolicyDocument(POLICY_DOCUMENT)
+
+        val response = iamManager.createPolicy(request)
+
+        LOG.info("IAM Policy for S3 Bucket $bucketName - $s3PolicyName created successfully. SDK Response: ${response.policy}")
+
+        return response.policy.arn
+    }
+
+    private fun attachS3PolicyToUser(iamS3BucketUser: String, s3PolicyARN: String, iamManager: AmazonIdentityManagement){
+
+        val attachUserPolicyReq = AttachUserPolicyRequest().withUserName(iamS3BucketUser).withPolicyArn(s3PolicyARN)
+
+        val attachUserPolicyResponse = iamManager.attachUserPolicy(attachUserPolicyReq)
+
+        LOG.debug("Policy ARN $s3PolicyARN successfully attached to $iamS3BucketUser IAM User. Response $attachUserPolicyResponse")
+    }
+
+    private fun createS3AccessKeys(iamS3BucketUser: String, iamManager: AmazonIdentityManagement): CreateAccessKeyResult {
+
+        val request = CreateAccessKeyRequest()
+                .withUserName(iamS3BucketUser)
+
+        val accessKeyResponse = iamManager.createAccessKey(request)
+
+        LOG.debug("S3 Access Keys created successfully for IAM User: ${accessKeyResponse.accessKey.userName}. " +
+                "Access Key: ${accessKeyResponse.accessKey.accessKeyId}. Secret Key: ${accessKeyResponse.accessKey.secretAccessKey}")
+
+        return accessKeyResponse
     }
 
 }

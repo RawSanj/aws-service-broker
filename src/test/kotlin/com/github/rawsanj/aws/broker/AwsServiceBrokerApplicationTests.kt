@@ -12,8 +12,8 @@ import kotlin.math.absoluteValue
 //@SpringBootTest
 class AwsServiceBrokerApplicationTests {
 
-	@Test
-	fun contextLoads() {
+    @Test
+    fun contextLoads() {
 
 
 //		var requestParams : MutableMap<String, Any> = mutableMapOf("user".to("sanjay"), "password".to("yolo"))
@@ -29,22 +29,45 @@ class AwsServiceBrokerApplicationTests {
 //
 //        println(UUID.randomUUID().toString())
 
-        println(Random().nextInt(1000).absoluteValue)
+//        println(Random().nextInt(1000).absoluteValue)
+//
+//        val no = -100
+//        println(no.absoluteValue)
+//
+//        var tags = listOf<Tag>(Tag().withKey("InstanceId").withValue("ufgjygfjgjfgsejfjsgfe"), Tag().withKey("Region").withValue("us-west-2"))
+//
+//        val instanceTag = tags.first { it.key == "InstanceId" }
+//
+//        println("InstanceTag: $instanceTag")
+//
+//        val regionTag = tags.first { it.key == "Region" }
+//
+//        println("RegionTag: $regionTag")
 
-        val no = -100
-        println(no.absoluteValue)
+        val bucketName = "sjdsgd-sdkjsdks-sdkusdg-97"
 
-        var tags = listOf<Tag>(Tag().withKey("InstanceId").withValue("ufgjygfjgjfgsejfjsgfe"), Tag().withKey("Region").withValue("us-west-2"))
+        val POLICY_DOCUMENT = "{\n" +
+                "   \"Version\": \"2012-10-17\",\n" +
+                "   \"Statement\": [\n" +
+                "     {\n" +
+                "       \"Effect\": \"Allow\",\n" +
+                "       \"Action\": [\"s3:ListBucket\"],\n" +
+                "       \"Resource\": [\"arn:aws:s3:::$bucketName\"]\n" +
+                "     },\n" +
+                "     {\n" +
+                "       \"Effect\": \"Allow\",\n" +
+                "       \"Action\": [\n" +
+                "         \"s3:PutObject\",\n" +
+                "         \"s3:GetObject\"\n" +
+                "         \"s3:DeleteObject\"\n" +
+                "       ],\n" +
+                "       \"Resource\": [\"arn:aws:s3:::$bucketName/*\"]\n" +
+                "     }\n" +
+                "   ]\n" +
+                " }"
 
-        val instanceTag = tags.first { it.key == "InstanceId" }
 
-        println("InstanceTag: $instanceTag")
-
-        val regionTag = tags.first { it.key == "Region" }
-
-        println("RegionTag: $regionTag")
-
-
+        println(POLICY_DOCUMENT)
     }
 
 }
