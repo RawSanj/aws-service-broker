@@ -10,7 +10,7 @@ data class ServiceBinding(
     @Column(length = 50)
     val bindingId: String = "",
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyColumn(name = "parameter_name", length = 100)
     @Column(name = "parameter_value")
     @CollectionTable(name = "service_binding_parameters", joinColumns = arrayOf(JoinColumn(name = "binding_id")))

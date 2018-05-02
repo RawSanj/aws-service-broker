@@ -3,8 +3,6 @@ package com.github.rawsanj.aws.broker.aws.service
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants
 import com.github.rawsanj.aws.broker.aws.model.ServiceBinding
 import com.github.rawsanj.aws.broker.aws.repository.ServiceBindingRepository
-import com.github.rawsanj.aws.broker.web.model.ApplicationInformation
-import com.github.rawsanj.aws.broker.web.model.User
 import org.springframework.cloud.servicebroker.exception.ServiceInstanceBindingDoesNotExistException
 import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstanceAppBindingResponse
 import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstanceBindingRequest
@@ -12,8 +10,6 @@ import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstan
 import org.springframework.cloud.servicebroker.model.binding.DeleteServiceInstanceBindingRequest
 import org.springframework.cloud.servicebroker.service.ServiceInstanceBindingService
 import org.springframework.stereotype.Service
-import org.springframework.web.util.UriComponentsBuilder
-import kotlin.collections.HashMap
 
 @Service
 class AwsServiceBindingService(val serviceBindingRepository: ServiceBindingRepository,
@@ -60,11 +56,29 @@ class AwsServiceBindingService(val serviceBindingRepository: ServiceBindingRepos
 
     override fun deleteServiceInstanceBinding(request: DeleteServiceInstanceBindingRequest) {
 
-        val bindingId = request.bindingId
+        val binding = serviceBindingRepository.findById(request.bindingId);
 
-        TODO("Delete RDS or S3 Creds is not Implemented")
+        if (!binding.isPresent) {
+            throw ServiceInstanceBindingDoesNotExistException(request.bindingId)
+        } else {
 
-        deleteBinding(bindingId)
+            when (request.serviceDefinitionId) {
+
+                AwsConstants.RDS_SERVICE_ID -> {
+                    // Delete RDS Credentials from Service Bindings
+                    serviceBindingRepository.deleteById(request.bindingId)
+                }
+                AwsConstants.S3_SERVICE_ID -> {
+                    // Delete S3 Secret Keys, IAM User and Policy
+                    s3OperationService.deleteBucketSecretKeys(binding.get())
+                    serviceBindingRepository.deleteById(request.bindingId)
+                }
+                else -> {
+                    throw IllegalArgumentException("Unsupported Service Definition - ${request.serviceDefinition}")
+                }
+            }
+
+        }
 
     }
 
@@ -73,12 +87,4 @@ class AwsServiceBindingService(val serviceBindingRepository: ServiceBindingRepos
         serviceBindingRepository.save(serviceBinding)
     }
 
-    private fun deleteBinding(bindingId: String) {
-
-        if (serviceBindingRepository.existsById(bindingId)) {
-            serviceBindingRepository.deleteById(bindingId)
-        } else {
-            throw ServiceInstanceBindingDoesNotExistException(bindingId)
-        }
-    }
 }
