@@ -1,6 +1,6 @@
 package com.github.rawsanj.aws.broker.config
 
-import com.github.rawsanj.aws.broker.web.security.SecurityAuthorities
+import com.github.rawsanj.aws.broker.security.SecurityAuthorities
 import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration

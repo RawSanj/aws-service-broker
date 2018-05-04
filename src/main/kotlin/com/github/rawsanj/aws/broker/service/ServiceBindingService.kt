@@ -1,8 +1,10 @@
-package com.github.rawsanj.aws.broker.aws.service
+package com.github.rawsanj.aws.broker.service
 
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants
-import com.github.rawsanj.aws.broker.aws.model.ServiceBinding
-import com.github.rawsanj.aws.broker.aws.repository.ServiceBindingRepository
+import com.github.rawsanj.aws.broker.aws.service.RdsOperationService
+import com.github.rawsanj.aws.broker.aws.service.S3OperationService
+import com.github.rawsanj.aws.broker.model.ServiceBinding
+import com.github.rawsanj.aws.broker.repository.ServiceBindingRepository
 import org.springframework.cloud.servicebroker.exception.ServiceInstanceBindingDoesNotExistException
 import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstanceAppBindingResponse
 import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstanceBindingRequest
@@ -12,9 +14,9 @@ import org.springframework.cloud.servicebroker.service.ServiceInstanceBindingSer
 import org.springframework.stereotype.Service
 
 @Service
-class AwsServiceBindingService(val serviceBindingRepository: ServiceBindingRepository,
-                               val rdsOperationService: RdsOperationService,
-                               val s3OperationService: S3OperationService) : ServiceInstanceBindingService {
+class ServiceBindingService(val serviceBindingRepository: ServiceBindingRepository,
+                            val rdsOperationService: RdsOperationService,
+                            val s3OperationService: S3OperationService) : ServiceInstanceBindingService {
 
     override fun createServiceInstanceBinding(request: CreateServiceInstanceBindingRequest): CreateServiceInstanceBindingResponse {
 

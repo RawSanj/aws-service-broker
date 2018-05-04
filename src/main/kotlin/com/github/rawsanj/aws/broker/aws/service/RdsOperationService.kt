@@ -6,7 +6,6 @@ import com.amazonaws.services.rds.model.CreateDBInstanceRequest
 import com.amazonaws.services.rds.model.DeleteDBInstanceRequest
 import com.amazonaws.services.rds.model.DescribeDBInstancesRequest
 import com.amazonaws.services.rds.model.Tag
-import com.github.rawsanj.aws.broker.aws.config.AwsConstants
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.AWS_ARN_STRING
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.AWS_REGION_STRING
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.DB_ALLOCATED_STORAGE_STRING
@@ -17,8 +16,8 @@ import com.github.rawsanj.aws.broker.aws.config.AwsConstants.PASSWORD_STRING
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.PORT_STRING
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.RDS_ENGINE_STRING
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.USERNAME_STRING
-import com.github.rawsanj.aws.broker.aws.model.ServiceInstance
-import com.github.rawsanj.aws.broker.aws.repository.ServiceInstanceRepository
+import com.github.rawsanj.aws.broker.model.ServiceInstance
+import com.github.rawsanj.aws.broker.repository.ServiceInstanceRepository
 import org.apache.commons.lang3.RandomStringUtils
 import org.slf4j.LoggerFactory
 import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstanceBindingRequest

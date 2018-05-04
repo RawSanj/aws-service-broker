@@ -1,4 +1,4 @@
-package com.github.rawsanj.aws.broker.aws.config.s3
+package com.github.rawsanj.aws.broker.aws.config
 
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants
 import org.springframework.cloud.servicebroker.model.catalog.Plan

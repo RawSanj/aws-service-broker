@@ -4,10 +4,7 @@ import com.amazonaws.handlers.AsyncHandler
 import com.amazonaws.services.rds.model.CreateDBInstanceRequest
 import com.amazonaws.services.rds.model.DBInstance
 import com.amazonaws.services.rds.model.DeleteDBInstanceRequest
-import com.github.rawsanj.aws.broker.aws.model.ServiceInstance
-import com.github.rawsanj.aws.broker.aws.repository.ServiceInstanceRepository
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.lang.Exception
 

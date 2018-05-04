@@ -1,6 +1,6 @@
-package com.github.rawsanj.aws.broker.web.repository
+package com.github.rawsanj.aws.broker.repository
 
-import com.github.rawsanj.aws.broker.web.model.User
+import com.github.rawsanj.aws.broker.model.User
 import org.springframework.data.jpa.repository.JpaRepository
 import java.util.*
 

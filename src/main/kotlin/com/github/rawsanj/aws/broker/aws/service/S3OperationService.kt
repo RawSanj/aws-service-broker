@@ -6,9 +6,14 @@ import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClientB
 import com.amazonaws.services.identitymanagement.model.*
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.amazonaws.services.s3.model.CreateBucketRequest
+import com.github.rawsanj.aws.broker.aws.config.AwsConstants.AWS_ACCESS_KEY_STRING
+import com.github.rawsanj.aws.broker.aws.config.AwsConstants.AWS_ARN_STRING
+import com.github.rawsanj.aws.broker.aws.config.AwsConstants.AWS_IAM_USER_STRING
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.AWS_REGION_STRING
+import com.github.rawsanj.aws.broker.aws.config.AwsConstants.AWS_SECRET_KEY_STRING
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.S3_BUCKET_NAME_STRING
-import com.github.rawsanj.aws.broker.aws.repository.ServiceInstanceRepository
+import com.github.rawsanj.aws.broker.model.ServiceBinding
+import com.github.rawsanj.aws.broker.repository.ServiceInstanceRepository
 import org.slf4j.LoggerFactory
 import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstanceBindingRequest
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest
@@ -16,12 +21,6 @@ import org.springframework.core.env.Environment
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import java.util.*
-import com.github.rawsanj.aws.broker.aws.config.AwsConstants.AWS_ACCESS_KEY_STRING
-import com.github.rawsanj.aws.broker.aws.config.AwsConstants.AWS_ARN_STRING
-import com.github.rawsanj.aws.broker.aws.config.AwsConstants.AWS_IAM_USER_STRING
-import com.github.rawsanj.aws.broker.aws.config.AwsConstants.AWS_SECRET_KEY_STRING
-import com.github.rawsanj.aws.broker.aws.model.ServiceBinding
-import org.springframework.cloud.servicebroker.model.binding.DeleteServiceInstanceBindingRequest
 
 
 @Service
@@ -116,7 +115,6 @@ class S3OperationService(private val awsCredentialsProvider: AWSCredentialsProvi
 
         val awsRegion = s3ServiceCredentials[AWS_REGION_STRING];
         val iamS3BucketUser = s3ServiceCredentials[AWS_IAM_USER_STRING]
-        val accessKeyId = s3ServiceCredentials[AWS_ACCESS_KEY_STRING]
         val s3PolicyARN = s3ServiceCredentials[AWS_ARN_STRING]
 
         val iamManager = AmazonIdentityManagementClientBuilder.standard().withCredentials(awsCredentialsProvider).withRegion(awsRegion.toString()).build()

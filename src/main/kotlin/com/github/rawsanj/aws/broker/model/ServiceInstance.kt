@@ -1,4 +1,4 @@
-package com.github.rawsanj.aws.broker.aws.model
+package com.github.rawsanj.aws.broker.model
 
 import javax.persistence.*
 

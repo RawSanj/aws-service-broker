@@ -1,8 +1,8 @@
 package com.github.rawsanj.aws.broker
 
-import com.github.rawsanj.aws.broker.web.model.User
-import com.github.rawsanj.aws.broker.web.repository.UserRepository
-import com.github.rawsanj.aws.broker.web.security.SecurityAuthorities
+import com.github.rawsanj.aws.broker.model.User
+import com.github.rawsanj.aws.broker.repository.UserRepository
+import com.github.rawsanj.aws.broker.security.SecurityAuthorities
 import org.springframework.boot.ApplicationRunner
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
@@ -18,7 +18,7 @@ class AwsServiceBrokerApplication(val userRepository: UserRepository, val passwo
     fun init(): ApplicationRunner {
         return ApplicationRunner {
             // Create Application Admin User
-            if (userRepository.count() === 0L) {
+            if (userRepository.count() == 0L) {
                 userRepository.save(adminUser())
             }
         }
@@ -27,7 +27,7 @@ class AwsServiceBrokerApplication(val userRepository: UserRepository, val passwo
     private fun adminUser(): User {
         return User(username = "admin",
                 password = passwordEncoder.encode("supersecret"),
-                authorities = listOf(SecurityAuthorities.ADMIN, SecurityAuthorities.FULL_ACCESS, SecurityAuthorities.ADMIN)
+                authorities = listOf(SecurityAuthorities.ADMIN, SecurityAuthorities.FULL_ACCESS)
         )
     }
 

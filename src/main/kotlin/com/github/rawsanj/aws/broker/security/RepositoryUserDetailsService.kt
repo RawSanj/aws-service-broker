@@ -1,7 +1,7 @@
-package com.github.rawsanj.aws.broker.web.security
+package com.github.rawsanj.aws.broker.security
 
-import com.github.rawsanj.aws.broker.web.model.User
-import com.github.rawsanj.aws.broker.web.repository.UserRepository
+import com.github.rawsanj.aws.broker.model.User
+import com.github.rawsanj.aws.broker.repository.UserRepository
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails

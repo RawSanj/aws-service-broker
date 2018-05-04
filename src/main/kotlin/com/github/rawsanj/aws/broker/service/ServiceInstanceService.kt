@@ -1,4 +1,4 @@
-package com.github.rawsanj.aws.broker.aws.service
+package com.github.rawsanj.aws.broker.service
 
 import com.amazonaws.services.rds.model.CreateDBInstanceRequest
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.AWS_REGION_STRING
@@ -12,8 +12,10 @@ import com.github.rawsanj.aws.broker.aws.config.AwsConstants.RDS_SERVICE_ID
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.S3_BUCKET_NAME_STRING
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.S3_BUCKET_PLAN
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.S3_SERVICE_ID
-import com.github.rawsanj.aws.broker.aws.model.ServiceInstance
-import com.github.rawsanj.aws.broker.aws.repository.ServiceInstanceRepository
+import com.github.rawsanj.aws.broker.aws.service.RdsOperationService
+import com.github.rawsanj.aws.broker.aws.service.S3OperationService
+import com.github.rawsanj.aws.broker.model.ServiceInstance
+import com.github.rawsanj.aws.broker.repository.ServiceInstanceRepository
 import org.springframework.cloud.servicebroker.exception.ServiceInstanceDoesNotExistException
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceResponse
@@ -23,7 +25,7 @@ import org.springframework.cloud.servicebroker.service.ServiceInstanceService
 import org.springframework.stereotype.Service
 
 @Service
-class AwsServiceInstanceService(val serviceInstanceRepository: ServiceInstanceRepository, val rdsOperationService: RdsOperationService, val s3OperationService: S3OperationService) : ServiceInstanceService {
+class ServiceInstanceService(val serviceInstanceRepository: ServiceInstanceRepository, val rdsOperationService: RdsOperationService, val s3OperationService: S3OperationService) : ServiceInstanceService {
 
     override fun createServiceInstance(request: CreateServiceInstanceRequest): CreateServiceInstanceResponse {
 
