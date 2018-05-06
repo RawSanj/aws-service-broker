@@ -116,6 +116,7 @@ class S3OperationService(private val awsCredentialsProvider: AWSCredentialsProvi
         val awsRegion = s3ServiceCredentials[AWS_REGION_STRING];
         val iamS3BucketUser = s3ServiceCredentials[AWS_IAM_USER_STRING]
         val s3PolicyARN = s3ServiceCredentials[AWS_ARN_STRING]
+        val accessKeyId = s3ServiceCredentials[AWS_ACCESS_KEY_STRING]
 
         val iamManager = AmazonIdentityManagementClientBuilder.standard().withCredentials(awsCredentialsProvider).withRegion(awsRegion.toString()).build()
 
@@ -129,10 +130,15 @@ class S3OperationService(private val awsCredentialsProvider: AWSCredentialsProvi
         val deletePolicyResponse = iamManager.deletePolicy(deletePolicyRequest)
         LOG.debug("IAM Policy deleted successfully. API Response: ${deletePolicyResponse.sdkResponseMetadata}")
 
-        // Delete IAM User and its S3 Secret Keys for Bucket Access
+        // Delete IAM User's Secret Keys for Bucket Access
+        val deleteAccessKeyRequest = DeleteAccessKeyRequest().withAccessKeyId(accessKeyId.toString()).withUserName(iamS3BucketUser.toString())
+        val deleteAccessKeyResponse = iamManager.deleteAccessKey(deleteAccessKeyRequest)
+        LOG.debug("IAM User deleted successfully. API Response: ${deleteAccessKeyResponse.sdkResponseMetadata}")
+
+        // Delete the IAM User for S3 Access
         val deleteUserRequest = DeleteUserRequest().withUserName(iamS3BucketUser.toString())
-        val deleteUserRespose = iamManager.deleteUser(deleteUserRequest)
-        LOG.debug("IAM User deleted successfully. API Response: ${deleteUserRespose.sdkResponseMetadata}")
+        val deleteUserResponse = iamManager.deleteUser(deleteUserRequest)
+        LOG.debug("IAM User deleted successfully. API Response: ${deleteUserResponse.sdkResponseMetadata}")
     }
 
     private fun createS3BucketUser(bucketName: String, iamManager: AmazonIdentityManagement): String {
