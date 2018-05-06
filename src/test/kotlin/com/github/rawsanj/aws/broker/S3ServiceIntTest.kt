@@ -1,6 +1,10 @@
 package com.github.rawsanj.aws.broker
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.github.rawsanj.aws.broker.TestConstants.PLAN_ID_STRING
+import com.github.rawsanj.aws.broker.TestConstants.SERVICE_ID_STRING
+import com.github.rawsanj.aws.broker.aws.config.AwsConstants.S3_BUCKET_PLAN
+import com.github.rawsanj.aws.broker.aws.config.AwsConstants.S3_SERVICE_ID
 import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.FixMethodOrder
@@ -63,7 +67,7 @@ class S3ServiceIntTest {
     @Test
     fun `A - Create S3 ServiceInstance`() {
 
-        val serviceInstanceRequest = ServiceRequest("s3-service", "s3-bucket", mutableMapOf("bucketName" to bucketName))
+        val serviceInstanceRequest = ServiceRequest(S3_SERVICE_ID, S3_BUCKET_PLAN, mutableMapOf("bucketName" to bucketName))
         val objMapper = ObjectMapper()
         val jsonReq = objMapper.writeValueAsString(serviceInstanceRequest)
 
@@ -78,7 +82,7 @@ class S3ServiceIntTest {
     @Test
     fun `B - Create S3 Service Binding`() {
 
-        val serviceBindingRequest = ServiceRequest("s3-service", "s3-bucket", emptyMap())
+        val serviceBindingRequest = ServiceRequest(S3_SERVICE_ID, S3_BUCKET_PLAN, emptyMap())
         val objMapper = ObjectMapper()
         val jsonReq = objMapper.writeValueAsString(serviceBindingRequest)
 
@@ -96,11 +100,11 @@ class S3ServiceIntTest {
     @Test
     fun `C - Delete S3 Service Binding`() {
 
-        val serviceBindingRequest = ServiceRequest("s3-service", "s3-bucket", emptyMap())
+        val serviceBindingRequest = ServiceRequest(S3_SERVICE_ID, S3_BUCKET_PLAN, emptyMap())
 
         mvc.perform(delete("/v2/service_instances/$serviceInstanceId/service_bindings/$bindingId")
-                .param("service_id", serviceBindingRequest.service_id)
-                .param("plan_id", serviceBindingRequest.plan_id))
+                .param(SERVICE_ID_STRING, serviceBindingRequest.service_id)
+                .param(PLAN_ID_STRING, serviceBindingRequest.plan_id))
                 .andExpect(status().isOk)
                 .andDo(print())
     }
@@ -108,11 +112,11 @@ class S3ServiceIntTest {
     @Test
     fun `D - Delete S3 Service Instance`() {
 
-        val serviceInstanceRequest = ServiceRequest("s3-service", "s3-bucket", emptyMap())
+        val serviceInstanceRequest = ServiceRequest(S3_SERVICE_ID, S3_BUCKET_PLAN, emptyMap())
 
         mvc.perform(delete("/v2/service_instances/$serviceInstanceId")
-                .param("service_id", serviceInstanceRequest.service_id)
-                .param("plan_id", serviceInstanceRequest.plan_id))
+                .param(SERVICE_ID_STRING, serviceInstanceRequest.service_id)
+                .param(PLAN_ID_STRING, serviceInstanceRequest.plan_id))
                 .andExpect(status().isOk)
                 .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON_UTF8))
                 .andDo(print())

@@ -25,7 +25,7 @@ class AwsServiceBrokerApplication(val userRepository: UserRepository, val passwo
     private fun adminUser(): User {
         return User(username = "admin",
                 password = passwordEncoder.encode("supersecret"),
-                authorities = listOf(SecurityAuthorities.ADMIN, SecurityAuthorities.FULL_ACCESS)
+                authorities = listOf(SecurityAuthorities.ADMIN, SecurityAuthorities.FULL_ACCESS, SecurityAuthorities.USER)
         )
     }
 

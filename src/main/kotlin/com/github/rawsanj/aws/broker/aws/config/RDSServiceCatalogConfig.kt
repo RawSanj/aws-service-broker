@@ -1,6 +1,5 @@
 package com.github.rawsanj.aws.broker.aws.config
 
-import com.github.rawsanj.aws.broker.aws.config.AwsConstants
 import org.springframework.cloud.servicebroker.model.catalog.Plan
 import org.springframework.cloud.servicebroker.model.catalog.ServiceDefinition
 import org.springframework.context.annotation.Bean
