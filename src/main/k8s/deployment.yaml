@@ -1,0 +1,76 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: aws-service-broker-deployment
+  labels:
+    app: aws-service-broker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aws-service-broker
+  template:
+    metadata:
+      labels:
+        app: aws-service-broker
+    spec:
+      containers:
+      - name: aws-service-broker
+        image: 'rawsanj/aws-service-broker:0.1.4'
+        ports:
+        - containerPort: 8080
+        env:
+          - name: SPRING_PROFILES_ACTIVE
+            value: kubernetes
+          - name: SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT
+            value: org.hibernate.dialect.MySQL5Dialect
+          - name: MYSQL_DATABASE
+            valueFrom:
+              secretKeyRef:
+                name: mysql-secret
+                key: MYSQL_DATABASE
+          - name: BROKER_DATABASE_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: mysql-secret
+                key: MYSQL_USER
+          - name: BROKER_DATABASE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name:  mysql-secret
+                key: MYSQL_PASSWORD
+          - name: AWS_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: aws-service-broker-secret
+                key: AWS_ACCESS_KEY
+          - name: AWS_SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: aws-service-broker-secret
+                key: AWS_SECRET_KEY
+          - name: CLOUD_AWS_REGION_STATIC
+            valueFrom:
+              secretKeyRef:
+                name: aws-service-broker-secret
+                key: CLOUD_AWS_REGION_STATIC
+          - name: MYSQL_DB_HOST
+            valueFrom:
+              secretKeyRef:
+                name: aws-service-broker-secret
+                key: BROKER_DATABASE_HOST
+          - name: MYSQL_DB_PORT
+            valueFrom:
+              secretKeyRef:
+                name: aws-service-broker-secret
+                key: BROKER_DATABASE_PORT
+          - name: BROKER_APP_ADMIN_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: aws-service-broker-secret
+                key: BROKER_APP_ADMIN_USERNAME
+          - name: BROKER_APP_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: aws-service-broker-secret
+                key: BROKER_APP_ADMIN_PASSWORD

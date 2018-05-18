@@ -1,0 +1,13 @@
+---
+path: target/aws-service-broker-1.0.0.jar
+instances: 1
+buildpack: https://github.com/cloudfoundry/java-buildpack
+applications:
+- name: raw-service-broker-app
+  random-route: true
+  services: broker-db
+  env:
+    BROKER_APP_USERNAME: brokerAdmin
+    BROKER_APP_PASSWORD: Br0k3r@dm1n
+    AWS_ACCESS_KEY: <AWS_Access_Key_Here>
+    AWS_SECRET_KEY: <AWS_Access_Secret_Here>

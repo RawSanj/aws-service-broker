@@ -1,11 +1,11 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.github.rawsanj</groupId>
     <artifactId>aws-service-broker</artifactId>
-    <version>1.0.0</version>
+    <version>0.1.4</version>
     <packaging>jar</packaging>
 
     <name>aws-service-broker</name>
@@ -25,6 +25,8 @@
         <kotlin.version>1.2.41</kotlin.version>
         <commons-lang3.version>3.7</commons-lang3.version>
         <awaitility.version>3.1.0</awaitility.version>
+        <spotify.docker.version>1.0.0</spotify.docker.version>
+        <registry.image.name>rawsanj/aws-service-broker</registry.image.name>
     </properties>
 
     <dependencies>
@@ -67,7 +69,6 @@
             <artifactId>jackson-module-kotlin</artifactId>
         </dependency>
 
-        <!--https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/rds/AmazonRDSClient.html#createDBInstance-com.amazonaws.services.rds.model.CreateDBInstanceRequest- -->
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk</artifactId>
@@ -148,6 +149,62 @@
                     </dependency>
                 </dependencies>
             </plugin>
+
+            <plugin>
+                <groupId>com.spotify</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>${spotify.docker.version}</version>
+                <configuration>
+                    <imageName>${registry.image.name}</imageName>
+                    <dockerDirectory>src/main/docker</dockerDirectory>
+                    <resources>
+                        <resource>
+                            <targetPath>/</targetPath>
+                            <directory>${project.build.directory}</directory>
+                            <include>${project.build.finalName}.jar</include>
+                        </resource>
+                    </resources>
+                    <imageTags>
+                        <imageTag>${project.version}</imageTag>
+                        <imageTag>latest</imageTag>
+                    </imageTags>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>docker-build</id>
+                        <goals>
+                            <goal>build</goal>
+                        </goals>
+                        <phase>package</phase>
+                    </execution>
+                    <execution>
+                        <id>docker-build-and-push</id>
+                        <goals>
+                            <goal>build</goal>
+                            <goal>push</goal>
+                        </goals>
+                        <phase>install</phase>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!--To be used later for creating Helm Charts-->
+            <!--<plugin>-->
+            <!--<groupId>io.fabric8</groupId>-->
+            <!--<artifactId>fabric8-maven-plugin</artifactId>-->
+            <!--<version>3.5.38</version>-->
+            <!--<executions>-->
+            <!--<execution>-->
+            <!--<id>fmp</id>-->
+            <!--<goals>-->
+            <!--<goal>resource</goal>-->
+            <!--<goal>helm</goal>-->
+            <!--<goal>build</goal>-->
+            <!--</goals>-->
+            <!--</execution>-->
+            <!--</executions>-->
+            <!--</plugin>-->
+
         </plugins>
     </build>
 
