@@ -9,20 +9,28 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: false
-
+  profiles:
+    active: dev
 ---
 spring:
-  profiles:
-    active: cloud
+  datasource:
+    url: jdbc:h2:~/test;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+
+cloudFoundry:
   datasource:
     url: ${vcap.services.broker-db.credentials.jdbcurl:jdbc:h2:~/test;DB_CLOSE_ON_EXIT=FALSE}
     username: ${vcap.services.broker-db.credentials.username:sa}
     password: ${vcap.services.broker-db.credentials.password:}
 
+kubernetes:
+  datasource:
+#    url: jdbc:mysql://broker-db:3306/brokerDB
+    url: jdbc:mysql://${MYSQL_DB_HOST}:${MYSQL_DB_PORT}/${MYSQL_DATABASE}
+    username: ${BROKER_DATABASE_USERNAME}
+    password: ${BROKER_DATABASE_PASSWORD}
 
-AWS_DEFAULT_REGION: us-east-1
-
-AWS_S3_ADMIN_USER: s3-admin
-
+AWS_DEFAULT_REGION: ${CLOUD_AWS_REGION_STATIC:us-west-2}
 
 # Open the Database Ports in default Security Group
