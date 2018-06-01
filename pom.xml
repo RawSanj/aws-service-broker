@@ -10,6 +10,23 @@
 
     <name>aws-service-broker</name>
     <description>Spring Boot Open Service Broker for provisioning AWS Services</description>
+    <url>https://github.com/RawSanj/aws-service-broker</url>
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+        </license>
+    </licenses>
+    <scm>
+        <connection>scm:git:git://github.com/RawSanj/aws-service-broker</connection>
+        <developerConnection>scm:git:ssh://git@github.com/RawSanj/aws-service-broker</developerConnection>
+        <url>https://github.com/RawSanj/aws-service-broker</url>
+    </scm>
+    <issueManagement>
+        <system>Github</system>
+        <url>https://github.com/spring-projects/spring-boot/issues</url>
+    </issueManagement>
+
 
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -27,6 +44,8 @@
         <awaitility.version>3.1.0</awaitility.version>
         <spotify.docker.version>1.0.0</spotify.docker.version>
         <registry.image.name>rawsanj/aws-service-broker</registry.image.name>
+        <sonar.jacoco.reportPath>${basedir}/target/jacoco.exec</sonar.jacoco.reportPath>
+        <jacoco.version>0.7.9</jacoco.version>
     </properties>
 
     <dependencies>
@@ -125,11 +144,28 @@
     <build>
         <sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>
         <testSourceDirectory>${project.basedir}/src/test/kotlin</testSourceDirectory>
+
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <classifier>exec</classifier>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>build-info</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
+
+            <plugin>
+                <groupId>pl.project13.maven</groupId>
+                <artifactId>git-commit-id-plugin</artifactId>
+            </plugin>
+
             <plugin>
                 <artifactId>kotlin-maven-plugin</artifactId>
                 <groupId>org.jetbrains.kotlin</groupId>
@@ -169,21 +205,99 @@
                         <imageTag>latest</imageTag>
                     </imageTags>
                 </configuration>
+                <!--<executions>-->
+                <!--<execution>-->
+                <!--<id>docker-build</id>-->
+                <!--<goals>-->
+                <!--<goal>build</goal>-->
+                <!--</goals>-->
+                <!--<phase>package</phase>-->
+                <!--</execution>-->
+                <!--<execution>-->
+                <!--<id>docker-build-and-push</id>-->
+                <!--<goals>-->
+                <!--<goal>build</goal>-->
+                <!--<goal>push</goal>-->
+                <!--</goals>-->
+                <!--<phase>install</phase>-->
+                <!--</execution>-->
+                <!--</executions>-->
+            </plugin>
+
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <configuration>
+                    <excludes>
+                        <exclude>com/github/rawsanj/aws/broker/*Application</exclude>
+                    </excludes>
+                    <destFile>${sonar.jacoco.reportPath}</destFile>
+                </configuration>
                 <executions>
                     <execution>
-                        <id>docker-build</id>
+                        <id>default-prepare-agent</id>
                         <goals>
-                            <goal>build</goal>
+                            <goal>prepare-agent</goal>
                         </goals>
-                        <phase>package</phase>
                     </execution>
                     <execution>
-                        <id>docker-build-and-push</id>
+                        <id>default-prepare-agent-integration</id>
                         <goals>
-                            <goal>build</goal>
-                            <goal>push</goal>
+                            <goal>prepare-agent-integration</goal>
                         </goals>
-                        <phase>install</phase>
+                    </execution>
+                    <execution>
+                        <id>default-report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>default-report-integration</id>
+                        <goals>
+                            <goal>report-integration</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>default-check</id>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <rule implementation="org.jacoco.maven.RuleConfiguration">
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit implementation="org.jacoco.report.check.Limit">
+                                            <counter>COMPLEXITY</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.60</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>**/*Test.*</include>
+                    </includes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>failsafe-integration-tests</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>integration-test</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
