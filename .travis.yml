@@ -1,4 +1,4 @@
-sudo: required
+sudo: true
 language: java
 jdk: oraclejdk8
 services:
@@ -18,6 +18,9 @@ addons:
     organization: rawsanj
     token:
       secure: $SONAR_TOKEN
+
+before_install:
+- chmod +x mvnw
 
 script:
 - ./mvnw clean install -B
