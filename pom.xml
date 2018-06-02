@@ -44,7 +44,8 @@
         <awaitility.version>3.1.0</awaitility.version>
         <spotify.docker.version>1.0.0</spotify.docker.version>
         <registry.image.name>rawsanj/aws-service-broker</registry.image.name>
-        <sonar.jacoco.reportPath>${basedir}/target/jacoco.exec</sonar.jacoco.reportPath>
+        <sonar.jacoco.reportPaths>${basedir}/target/jacoco.exec</sonar.jacoco.reportPaths>
+        <sonar.junit.reportPaths>${basedir}/target/surefire-reports</sonar.junit.reportPaths>
         <jacoco.version>0.7.9</jacoco.version>
     </properties>
 
@@ -230,9 +231,12 @@
                 <version>${jacoco.version}</version>
                 <configuration>
                     <excludes>
-                        <exclude>com/github/rawsanj/aws/broker/*Application</exclude>
+                        <exclude>com/github/rawsanj/aws/broker/*Application*</exclude>
+                        <exclude>com/github/rawsanj/aws/broker/model/*</exclude>
+                        <exclude>com/github/rawsanj/aws/broker/config/*DatabaseConfig</exclude>
                     </excludes>
-                    <destFile>${sonar.jacoco.reportPath}</destFile>
+                    <destFile>${sonar.jacoco.reportPaths}</destFile>
+                    <destFile>${sonar.junit.reportPaths}</destFile>
                 </configuration>
                 <executions>
                     <execution>
@@ -249,7 +253,7 @@
                     </execution>
                     <execution>
                         <id>default-report</id>
-                        <phase>verify</phase>
+                        <phase>test</phase>
                         <goals>
                             <goal>report</goal>
                         </goals>
@@ -279,25 +283,6 @@
                                 </rule>
                             </rules>
                         </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <configuration>
-                    <includes>
-                        <include>**/*Test.*</include>
-                    </includes>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>failsafe-integration-tests</id>
-                        <phase>integration-test</phase>
-                        <goals>
-                            <goal>integration-test</goal>
-                        </goals>
                     </execution>
                 </executions>
             </plugin>
@@ -340,5 +325,6 @@
             </snapshots>
         </repository>
     </repositories>
+
 
 </project>
