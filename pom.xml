@@ -27,7 +27,6 @@
         <url>https://github.com/spring-projects/spring-boot/issues</url>
     </issueManagement>
 
-
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -42,11 +41,19 @@
         <kotlin.version>1.2.41</kotlin.version>
         <commons-lang3.version>3.7</commons-lang3.version>
         <awaitility.version>3.1.0</awaitility.version>
+        <!--Docker Properties-->
         <spotify.docker.version>1.0.0</spotify.docker.version>
         <registry.image.name>rawsanj/aws-service-broker</registry.image.name>
-        <sonar.jacoco.reportPaths>${basedir}/target/jacoco.exec</sonar.jacoco.reportPaths>
-        <sonar.junit.reportPaths>${basedir}/target/surefire-reports</sonar.junit.reportPaths>
-        <jacoco.version>0.7.9</jacoco.version>
+        <!-- Sonar properties -->
+        <sonar-maven-plugin.version>3.4.0.905</sonar-maven-plugin.version>
+        <sonar.language>java</sonar.language>
+        <sonar.java.codeCoveragePlugin>jacoco</sonar.java.codeCoveragePlugin>
+        <sonar.jacoco.reportPath>${project.build.directory}/coverage/jacoco/jacoco.exec</sonar.jacoco.reportPath>
+        <sonar.surefire.reportsPath>${project.build.directory}/surefire-reports</sonar.surefire.reportsPath>
+        <sonar.sources>${project.basedir}/src/main</sonar.sources>
+        <sonar.tests>${project.basedir}/src/test</sonar.tests>
+        <sonar.java.binaries>${project.build.directory}/classes</sonar.java.binaries>
+        <jacoco-maven-plugin.version>0.8.1</jacoco-maven-plugin.version>
     </properties>
 
     <dependencies>
@@ -163,6 +170,12 @@
             </plugin>
 
             <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>${sonar-maven-plugin.version}</version>
+            </plugin>
+
+            <plugin>
                 <groupId>pl.project13.maven</groupId>
                 <artifactId>git-commit-id-plugin</artifactId>
             </plugin>
@@ -228,15 +241,16 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>${jacoco.version}</version>
+                <version>${jacoco-maven-plugin.version}</version>
                 <configuration>
                     <excludes>
                         <exclude>com/github/rawsanj/aws/broker/*Application*</exclude>
                         <exclude>com/github/rawsanj/aws/broker/model/*</exclude>
                         <exclude>com/github/rawsanj/aws/broker/config/*DatabaseConfig</exclude>
                     </excludes>
-                    <destFile>${sonar.jacoco.reportPaths}</destFile>
-                    <destFile>${sonar.junit.reportPaths}</destFile>
+                    <destFile>${sonar.jacoco.reportPath}</destFile>
+                    <dataFile>${sonar.jacoco.reportPath}</dataFile>
+                    <outputDirectory>${project.build.directory}/coverage/jacoco</outputDirectory>
                 </configuration>
                 <executions>
                     <execution>
@@ -244,12 +258,9 @@
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
-                    </execution>
-                    <execution>
-                        <id>default-prepare-agent-integration</id>
-                        <goals>
-                            <goal>prepare-agent-integration</goal>
-                        </goals>
+                        <configuration>
+                            <destFile>${sonar.jacoco.reportPath}</destFile>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>default-report</id>
@@ -257,12 +268,10 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
-                    </execution>
-                    <execution>
-                        <id>default-report-integration</id>
-                        <goals>
-                            <goal>report-integration</goal>
-                        </goals>
+                        <configuration>
+                            <dataFile>${sonar.jacoco.reportPath}</dataFile>
+                            <outputDirectory>${project.build.directory}/coverage/jacoco</outputDirectory>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>default-check</id>
@@ -270,6 +279,7 @@
                             <goal>check</goal>
                         </goals>
                         <configuration>
+                            <dataFile>${sonar.jacoco.reportPath}</dataFile>
                             <rules>
                                 <rule implementation="org.jacoco.maven.RuleConfiguration">
                                     <element>BUNDLE</element>
@@ -277,7 +287,7 @@
                                         <limit implementation="org.jacoco.report.check.Limit">
                                             <counter>COMPLEXITY</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.60</minimum>
+                                            <minimum>0.70</minimum>
                                         </limit>
                                     </limits>
                                 </rule>

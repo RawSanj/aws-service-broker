@@ -27,7 +27,7 @@ before_install:
 - chmod +x mvnw
 
 script:
-- ./mvnw clean org.jacoco:jacoco-maven-plugin:prepare-agent install sonar:sonar -Dmaven.test.failure.ignore=false
+- ./mvnw clean org.jacoco:jacoco-maven-plugin:prepare-agent install #sonar:sonar -Dmaven.test.failure.ignore=false => Sonar Plugin not publishing results for Kotlin Project. This will be enabled later when Kotlin in officially supported.
 
 cache:
   directories:
