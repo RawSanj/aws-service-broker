@@ -1,5 +1,6 @@
 package com.github.rawsanj.aws.broker.aws.service
 
+import com.amazonaws.SdkClientException
 import com.amazonaws.auth.AWSCredentialsProvider
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagement
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClientBuilder
@@ -12,7 +13,11 @@ import com.github.rawsanj.aws.broker.aws.config.AwsConstants.AWS_IAM_USER_STRING
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.AWS_REGION_STRING
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.AWS_SECRET_KEY_STRING
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.S3_BUCKET_NAME_STRING
+import com.github.rawsanj.aws.broker.model.EventType
+import com.github.rawsanj.aws.broker.model.STATUS
+import com.github.rawsanj.aws.broker.model.ServiceAudit
 import com.github.rawsanj.aws.broker.model.ServiceBinding
+import com.github.rawsanj.aws.broker.repository.ServiceAuditRepository
 import com.github.rawsanj.aws.broker.repository.ServiceInstanceRepository
 import org.slf4j.LoggerFactory
 import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstanceBindingRequest
@@ -24,7 +29,8 @@ import java.util.*
 
 
 @Service
-class S3OperationService(private val awsCredentialsProvider: AWSCredentialsProvider, private val env: Environment, private val serviceInstanceRepository: ServiceInstanceRepository) {
+class S3OperationService(private val awsCredentialsProvider: AWSCredentialsProvider, private val env: Environment,
+                         private val serviceInstanceRepository: ServiceInstanceRepository, private val serviceAuditRepository: ServiceAuditRepository) {
 
     private val LOG = LoggerFactory.getLogger(S3OperationService::class.java)
 
@@ -35,7 +41,12 @@ class S3OperationService(private val awsCredentialsProvider: AWSCredentialsProvi
         val s3BucketRequest = CreateBucketRequest(bucketName, bucketRegion)
 
         val s3Client = AmazonS3ClientBuilder.standard().withCredentials(awsCredentialsProvider).withRegion(bucketRegion).build()
-        s3Client.createBucket(s3BucketRequest)
+        try {
+            s3Client.createBucket(s3BucketRequest)
+            this.saveS3ServiceEvent(ServiceAudit(message = "AWS S3 Bucket creation successful. AWS Bucket name: $bucketName", eventType = EventType.CREATION, status = STATUS.SUCCESS))
+        } catch (exception: SdkClientException) {
+            this.saveS3ServiceEvent(ServiceAudit(message = "AWS S3 Bucket creation failed. Exception: $exception", eventType = EventType.CREATION, status = STATUS.FAILED))
+        }
 
         return bucketName to bucketRegion
     }
@@ -57,17 +68,27 @@ class S3OperationService(private val awsCredentialsProvider: AWSCredentialsProvi
         return bucketName to bucketRegion
     }
 
+    fun saveS3ServiceEvent(serviceAudit: ServiceAudit) {
+        serviceAuditRepository.save(serviceAudit)
+    }
+
     @Async
     fun deleteBucket(bucketName: String, awsRegion: String) {
+
         val s3Client = AmazonS3ClientBuilder.standard().withCredentials(awsCredentialsProvider).withRegion(awsRegion).build()
 
-        s3Client.listObjects(bucketName).objectSummaries.forEach {
-            LOG.info("Deleting Object: ${it.key}")
-            s3Client.deleteObject(bucketName, it.key)
-        }
+        try {
+            s3Client.listObjects(bucketName).objectSummaries.forEach {
+                LOG.info("Deleting Object: ${it.key}")
+                s3Client.deleteObject(bucketName, it.key)
+            }
+            LOG.info("Deleting Bucket: $bucketName")
+            s3Client.deleteBucket(bucketName)
 
-        LOG.info("Deleting Bucket: $bucketName")
-        s3Client.deleteBucket(bucketName)
+            this.saveS3ServiceEvent(ServiceAudit(message = "AWS S3 Bucket deletion succeeded. AWS Bucket name: $bucketName", eventType = EventType.DELETION, status = STATUS.SUCCESS))
+        } catch (exception: SdkClientException) {
+            this.saveS3ServiceEvent(ServiceAudit(message = "AWS S3 Bucket deletion failed. Exception: $exception", eventType = EventType.DELETION, status = STATUS.FAILED))
+        }
     }
 
     fun createBucketSecretKeys(request: CreateServiceInstanceBindingRequest): Map<String, Any> {

@@ -16,7 +16,11 @@ import com.github.rawsanj.aws.broker.aws.config.AwsConstants.PASSWORD_STRING
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.PORT_STRING
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.RDS_ENGINE_STRING
 import com.github.rawsanj.aws.broker.aws.config.AwsConstants.USERNAME_STRING
+import com.github.rawsanj.aws.broker.model.EventType
+import com.github.rawsanj.aws.broker.model.STATUS
+import com.github.rawsanj.aws.broker.model.ServiceAudit
 import com.github.rawsanj.aws.broker.model.ServiceInstance
+import com.github.rawsanj.aws.broker.repository.ServiceAuditRepository
 import com.github.rawsanj.aws.broker.repository.ServiceInstanceRepository
 import org.apache.commons.lang3.RandomStringUtils
 import org.slf4j.LoggerFactory
@@ -31,7 +35,8 @@ import kotlin.math.absoluteValue
 
 
 @Service
-class RdsOperationService(private val awsCredentialsProvider: AWSCredentialsProvider, private val env: Environment, private val serviceInstanceRepository: ServiceInstanceRepository) {
+class RdsOperationService(private val awsCredentialsProvider: AWSCredentialsProvider, private val env: Environment,
+                          private val serviceInstanceRepository: ServiceInstanceRepository, private val serviceAuditRepository: ServiceAuditRepository) {
 
     private val LOG = LoggerFactory.getLogger(RdsOperationService::class.java)
 
@@ -138,7 +143,7 @@ class RdsOperationService(private val awsCredentialsProvider: AWSCredentialsProv
         val rdsAsyncClient = AmazonRDSAsyncClientBuilder.standard().withCredentials(awsCredentialsProvider).withRegion(awsRegion).build();
         val dBInstanceRequest = DeleteDBInstanceRequest(dBInstanceIdentifier).withSkipFinalSnapshot(true) // Skipping Final SnapShot
 
-        rdsAsyncClient.deleteDBInstanceAsync(dBInstanceRequest, RdsDeleteDbInstanceAsyncHandler())
+        rdsAsyncClient.deleteDBInstanceAsync(dBInstanceRequest, RdsDeleteDbInstanceAsyncHandler(this))
 
     }
 
@@ -155,8 +160,14 @@ class RdsOperationService(private val awsCredentialsProvider: AWSCredentialsProv
 
             val serviceInstance = ServiceInstance(it.instanceId, it.serviceDefinitionId, it.planId, parameters)
             serviceInstanceRepository.save(serviceInstance)
+
+            this.saveRdsServiceEvent(ServiceAudit(message = "AWS RDS Instance provisioned successfully. AWS ARN: $dbInstanceArn", eventType = EventType.CREATION, status = STATUS.SUCCESS))
         }
 
+    }
+
+    fun saveRdsServiceEvent(serviceAudit: ServiceAudit){
+        serviceAuditRepository.save(serviceAudit)
     }
 
     fun fetchRdsCredentials(request: CreateServiceInstanceBindingRequest): Map<String, Any> {

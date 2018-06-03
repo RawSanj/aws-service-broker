@@ -90,7 +90,7 @@ class RdsServiceIntTest {
                 .andExpect(status().isCreated)
                 .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON_UTF8))
 
-        val notReadyParams = getServiceInstanceParams()
+        val notReadyParams = getServiceInstanceParams(serviceInstanceRepository, serviceInstanceId)
 
         assertThat(notReadyParams[HOSTNAME_STRING], nullValue())
         assertThat(notReadyParams[PORT_STRING], nullValue())
@@ -109,7 +109,7 @@ class RdsServiceIntTest {
 
         LOG.info("RDS is ready Now, resuming test.")
 
-        val params = getServiceInstanceParams()
+        val params = getServiceInstanceParams(serviceInstanceRepository, serviceInstanceId)
 
         assertThat(params[HOSTNAME_STRING], notNullValue())
         assertThat(params[PORT_STRING].toString(), equalTo("3306"))
@@ -170,17 +170,6 @@ class RdsServiceIntTest {
         } else {
             false
         }
-    }
-
-    private fun setDefaultsForAwaitility() {
-        setDefaultPollInterval(30, TimeUnit.SECONDS);
-        setDefaultPollDelay(Duration.ONE_MINUTE);
-        setDefaultTimeout(Duration.ONE_MINUTE);
-    }
-
-    private fun getServiceInstanceParams(): Map<String, Any> {
-        val serviceInstance = serviceInstanceRepository.findById(serviceInstanceId).get()
-        return serviceInstance.parameters
     }
 
 }

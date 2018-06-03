@@ -246,7 +246,7 @@
                     <excludes>
                         <exclude>com/github/rawsanj/aws/broker/*Application*</exclude>
                         <exclude>com/github/rawsanj/aws/broker/model/*</exclude>
-                        <exclude>com/github/rawsanj/aws/broker/config/*DatabaseConfig</exclude>
+                        <exclude>com/github/rawsanj/aws/broker/config/db/*</exclude>
                     </excludes>
                     <destFile>${sonar.jacoco.reportPath}</destFile>
                     <dataFile>${sonar.jacoco.reportPath}</dataFile>

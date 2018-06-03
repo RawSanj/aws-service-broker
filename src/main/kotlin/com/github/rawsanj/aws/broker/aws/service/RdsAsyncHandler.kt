@@ -4,6 +4,9 @@ import com.amazonaws.handlers.AsyncHandler
 import com.amazonaws.services.rds.model.CreateDBInstanceRequest
 import com.amazonaws.services.rds.model.DBInstance
 import com.amazonaws.services.rds.model.DeleteDBInstanceRequest
+import com.github.rawsanj.aws.broker.model.EventType
+import com.github.rawsanj.aws.broker.model.STATUS
+import com.github.rawsanj.aws.broker.model.ServiceAudit
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.lang.Exception
@@ -30,21 +33,24 @@ class RdsCreateDbInstanceAsyncHandler(private var rdsOperationService: RdsOperat
     }
 
     override fun onError(exception: Exception) {
-        LOG.info("Error while creating RDS Instance. Message: ${exception.message}. Cause: ${exception.cause}")
+        LOG.info("Error while creating RDS Instance. Message: ${exception.message}.")
+        rdsOperationService.saveRdsServiceEvent(ServiceAudit(message = "AWS RDS Instance provisioning Failed. AWS Exception: ${exception.message}", eventType = EventType.CREATION, status = STATUS.FAILED))
     }
 
 }
 
-class RdsDeleteDbInstanceAsyncHandler : AsyncHandler<DeleteDBInstanceRequest, DBInstance> {
+class RdsDeleteDbInstanceAsyncHandler(private var rdsOperationService: RdsOperationService) : AsyncHandler<DeleteDBInstanceRequest, DBInstance> {
 
     private val LOG = LoggerFactory.getLogger(RdsDeleteDbInstanceAsyncHandler::class.java)
 
     override fun onSuccess(request: DeleteDBInstanceRequest, result: DBInstance) {
         LOG.info("Deleting RDS Instance: {${request.dbInstanceIdentifier} is Successfully")
         LOG.info("Deleting RDS with ARN: ${result.dbInstanceArn}.")
+        rdsOperationService.saveRdsServiceEvent(ServiceAudit(message = "AWS RDS Instance deleted successfully. AWS ARN: ${result.dbInstanceArn}", eventType = EventType.DELETION, status = STATUS.SUCCESS))
     }
 
     override fun onError(exception: Exception) {
-        LOG.info("Error while deleting RDS Instance. Message: ${exception.message}. Cause: ${exception.cause}")
+        LOG.info("Error while deleting RDS Instance. Message: ${exception.message}.")
+        rdsOperationService.saveRdsServiceEvent(ServiceAudit(message = "AWS RDS Instance deletion failed. AWS ARN: ${exception.message}", eventType = EventType.DELETION, status = STATUS.FAILED))
     }
 }
