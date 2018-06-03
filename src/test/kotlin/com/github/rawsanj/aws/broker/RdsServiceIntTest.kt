@@ -20,6 +20,7 @@ import org.junit.FixMethodOrder
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.MethodSorters
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
@@ -28,7 +29,6 @@ import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
-import org.springframework.test.web.servlet.result.MockMvcResultHandlers.print
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
@@ -41,6 +41,8 @@ import java.util.concurrent.TimeUnit
 @SpringBootTest
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 class RdsServiceIntTest {
+
+    private val LOG = LoggerFactory.getLogger(RdsServiceIntTest::class.java)
 
     @Autowired
     private lateinit var context: WebApplicationContext
@@ -87,7 +89,6 @@ class RdsServiceIntTest {
                 .content(jsonReq))
                 .andExpect(status().isCreated)
                 .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON_UTF8))
-                .andDo(print())
 
         val notReadyParams = getServiceInstanceParams()
 
@@ -98,7 +99,7 @@ class RdsServiceIntTest {
 
         setDefaultsForAwaitility()
 
-        println("Waiting for RDS Instance to be Ready")
+        LOG.info("Waiting for RDS Instance to be Ready.")
 
         await()
                 .atMost(10, TimeUnit.MINUTES)
@@ -106,7 +107,7 @@ class RdsServiceIntTest {
                     waitTillRdsDBisReady(serviceInstanceId)
                 }
 
-        println("RDS is ready Now, resuming test.")
+        LOG.info("RDS is ready Now, resuming test.")
 
         val params = getServiceInstanceParams()
 
@@ -133,8 +134,6 @@ class RdsServiceIntTest {
                 .andExpect(jsonPath("$.credentials.password").isNotEmpty)
                 .andExpect(jsonPath("$.credentials.hostname").isNotEmpty)
                 .andExpect(jsonPath("$.credentials.port").isNotEmpty)
-                .andDo(print())
-
     }
 
     @Test
@@ -146,7 +145,6 @@ class RdsServiceIntTest {
                 .param(SERVICE_ID_STRING, serviceBindingRequest.service_id)
                 .param(PLAN_ID_STRING, serviceBindingRequest.plan_id))
                 .andExpect(status().isOk)
-                .andDo(print())
     }
 
     @Test
@@ -159,12 +157,11 @@ class RdsServiceIntTest {
                 .param(PLAN_ID_STRING, serviceInstanceRequest.plan_id))
                 .andExpect(status().isOk)
                 .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON_UTF8))
-                .andDo(print())
     }
 
     private fun waitTillRdsDBisReady(serviceInstanceId: String): Boolean {
 
-        println("Checking if AWS RDS is ready.")
+        LOG.info("Checking if AWS RDS Instance of ServiceIntanceId: $serviceInstanceId is ready.")
 
         val serviceInstance = serviceInstanceRepository.findById(serviceInstanceId)
 

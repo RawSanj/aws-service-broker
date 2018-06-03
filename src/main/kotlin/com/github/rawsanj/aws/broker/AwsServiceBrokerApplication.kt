@@ -22,6 +22,7 @@ class AwsServiceBrokerApplication(val userRepository: UserRepository, val passwo
         return ApplicationRunner {
             // Create Application Admin User
             if (userRepository.count() == 0L) {
+                LOG.info("Creating Default Admin User for Broker App")
                 userRepository.save(adminUser())
             }
         }

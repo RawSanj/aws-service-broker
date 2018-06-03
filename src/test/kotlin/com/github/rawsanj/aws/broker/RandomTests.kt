@@ -12,10 +12,7 @@ class RandomTests {
             |This is new lines.
         """.trimMargin()
 
-        println(lines)
-
         val sinleLine = lines.replace("\n".toRegex(), "")
-        println(sinleLine)
 
         assertThat(sinleLine).isEqualTo("This lines ends here.This is new lines.")
 

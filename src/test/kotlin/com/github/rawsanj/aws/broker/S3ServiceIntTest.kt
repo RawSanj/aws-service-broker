@@ -20,7 +20,6 @@ import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
-import org.springframework.test.web.servlet.result.MockMvcResultHandlers.print
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
@@ -76,7 +75,6 @@ class S3ServiceIntTest {
                 .content(jsonReq))
                 .andExpect(status().isCreated)
                 .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON_UTF8))
-                .andDo(print())
     }
 
     @Test
@@ -94,7 +92,6 @@ class S3ServiceIntTest {
                 .andExpect(jsonPath("$.credentials.bucketName").value(bucketName))
                 .andExpect(jsonPath("$.credentials.AWS_ACCESS_KEY").isNotEmpty)
                 .andExpect(jsonPath("$.credentials.AWS_SECRET_KEY").isNotEmpty)
-                .andDo(print())
     }
 
     @Test
@@ -106,7 +103,6 @@ class S3ServiceIntTest {
                 .param(SERVICE_ID_STRING, serviceBindingRequest.service_id)
                 .param(PLAN_ID_STRING, serviceBindingRequest.plan_id))
                 .andExpect(status().isOk)
-                .andDo(print())
     }
 
     @Test
@@ -119,6 +115,5 @@ class S3ServiceIntTest {
                 .param(PLAN_ID_STRING, serviceInstanceRequest.plan_id))
                 .andExpect(status().isOk)
                 .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON_UTF8))
-                .andDo(print())
     }
 }
