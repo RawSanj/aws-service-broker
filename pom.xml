@@ -5,7 +5,7 @@
 
     <groupId>com.github.rawsanj</groupId>
     <artifactId>aws-service-broker</artifactId>
-    <version>0.1.4</version>
+    <version>0.1.5</version>
     <packaging>jar</packaging>
 
     <name>aws-service-broker</name>
